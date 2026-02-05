@@ -1,0 +1,7 @@
+{
+  "name": "hang-nhat-noi-dia",
+  "version": "1.0.0",
+  "dependencies": {
+    "@netlify/blobs": "^0.2.0"
+  }
+}
