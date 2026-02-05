@@ -258,5 +258,20 @@ function filterByCategory(cat, el) {
     renderProducts(cat === 'Tất cả' ? products : products.filter(p => p.category === cat));
 }
 
+// LẮNG NGHE BÀN PHÍM TOÀN CỤC
+document.addEventListener('keydown', function(e) {
+    const modal = document.getElementById('productModal');
+    // Chỉ hoạt động khi Modal đang hiển thị (không bị ẩn)
+    if (modal && !modal.classList.contains('hidden')) {
+        if (e.key === 'ArrowRight') {
+            nextImage(); // Nhấn mũi tên phải
+        } else if (e.key === 'ArrowLeft') {
+            prevImage(); // Nhấn mũi tên trái
+        } else if (e.key === 'Escape') {
+            modal.classList.replace('flex', 'hidden'); // Nhấn Esc để đóng
+        }
+    }
+});
+
 // KHỞI CHẠY
 fetchProducts();
