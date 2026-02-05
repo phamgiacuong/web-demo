@@ -163,20 +163,22 @@ async function saveProduct() {
             body: JSON.stringify({ index: editingIndex, product: payload, isDelete: false })
         });
 
-        const result = await res.json();
-
         if (res.ok) {
             showNotify("THÀNH CÔNG!");
-            await fetchProducts(); // Cập nhật danh sách ngầm
+            await fetchProducts();
 
-            // Xóa form sau 1 giây để nhập tiếp
             setTimeout(() => {
                 clearForm();
                 editingIndex = null;
-                nameEl.focus();
+                // NẾU BẠN MUỐN TẮT POPUP ADMIN SAU KHI LƯU:
+                // closeAdminModal();
+
+                // NẾU MUỐN Ở LẠI ĐỂ NHẬP TIẾP:
+                document.getElementById('pName').focus();
             }, 1000);
         } else {
-            throw new Error(result.error || "Lỗi server");
+            const result = await res.json();
+            throw new Error(result.error);
         }
     } catch (err) {
         showNotify("LỖI: " + err.message, true);
