@@ -80,15 +80,28 @@ function filterByCategory(cat, el) {
 }
 /* ================= ADMIN BASIC ================= */
 
+/* ===== ADMIN SECRET ===== */
+
 const ADMIN_PASSWORD = "123";
 
-function accessAdmin() {
-    const pass = prompt("Nhập mật khẩu quản trị:");
+function openAdmin() {
+    const pass = prompt("Mật khẩu Admin:");
     if (pass === ADMIN_PASSWORD) {
-        alert("Admin mode (demo) 🚀\nBạn có thể mở modal quản lý ở đây.");
-        // TODO: mở admin modal nếu bạn muốn
+        document.getElementById('adminModal').classList.remove('hidden');
     } else {
         alert("Sai mật khẩu!");
     }
 }
+
+function closeAdmin() {
+    document.getElementById('adminModal').classList.add('hidden');
+}
+
+/* SECRET KEY: Ctrl + Shift + A */
+document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'a') {
+        e.preventDefault();
+        openAdmin();
+    }
+});
 fetchProducts();

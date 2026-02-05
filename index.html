@@ -24,9 +24,9 @@
                 <p class="logo-sub">Japanese Quality Standard</p>
             </div>
 
-            <button onclick="accessAdmin()" class="btn-outline">
-                Quản lý
-            </button>
+<!--            <button onclick="accessAdmin()" class="btn-outline">-->
+<!--                Quản lý-->
+<!--            </button>-->
         </div>
 
         <div class="tab-bar">
@@ -69,6 +69,25 @@
 <!-- LIGHTBOX -->
 <div id="lightbox" class="lightbox hidden" onclick="closeLightbox()">
     <img id="lightboxImg">
+</div>
+
+<!-- ADMIN MODAL -->
+<div id="adminModal" class="admin-modal hidden">
+    <div class="admin-panel">
+        <button class="admin-close" onclick="closeAdmin()">×</button>
+
+        <h3 class="admin-title">Admin Dashboard</h3>
+
+        <div class="admin-actions">
+            <button class="admin-btn">➕ Thêm sản phẩm</button>
+            <button class="admin-btn">✏️ Sửa sản phẩm</button>
+            <button class="admin-btn danger">🗑 Xóa sản phẩm</button>
+        </div>
+
+        <p class="admin-note">
+            Shopify-style Admin – tối giản, nhanh, không làm phiền user 👌
+        </p>
+    </div>
 </div>
 
 <script src="script.js"></script>
