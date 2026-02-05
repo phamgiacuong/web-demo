@@ -1,39 +1,161 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Product – Shopify Style</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chuyên Hàng Nhật Nội Địa</title>
+
+    <!-- Tailwind (bạn đang dùng) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
 
-<div class="product-modal">
-    <div class="shopify-product">
+<body class="bg-[#fdfdfd] text-gray-800">
 
-        <!-- MEDIA -->
-        <div class="sp-media">
-            <div class="sp-main skeleton">
-                <img id="modalMainImg" loading="lazy">
+<!-- ================= HEADER ================= -->
+<header class="sticky top-0 z-40">
+    <div class="header-glass">
+
+        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <!-- SEARCH -->
+            <input
+                    type="text"
+                    oninput="handleSearch(event)"
+                    placeholder="Tìm kiếm sản phẩm..."
+                    class="search-input">
+
+            <!-- LOGO -->
+            <div class="text-center">
+                <h1 class="logo-title">Hàng Nhật <span>Nội Địa</span></h1>
+                <p class="logo-sub">Japanese Quality Standard</p>
             </div>
-            <div class="sp-thumbs" id="modalThumbnails"></div>
+
+            <!-- ADMIN (ẩn bằng phím tắt) -->
+            <!--
+            <button onclick="accessAdmin()" class="btn-outline">
+                Quản lý
+            </button>
+            -->
         </div>
 
-        <!-- INFO -->
-        <div class="sp-info">
-            <h1 id="modalName" class="skeleton-text"></h1>
-            <div class="sp-price skeleton-text" id="modalPrice"></div>
-            <p class="sp-desc skeleton-text" id="modalDesc"></p>
-
-            <button class="sp-cta">Liên hệ đặt hàng</button>
+        <!-- CATEGORY FILTER -->
+        <div class="tab-bar">
+            <span class="tab-cat tab-active"
+                  onclick="filterByCategory('Tất cả', this)">Tất cả</span>
+            <span class="tab-cat"
+                  onclick="filterByCategory('Thực phẩm chức năng', this)">TPCN</span>
+            <span class="tab-cat"
+                  onclick="filterByCategory('Quần áo', this)">Quần áo</span>
+            <span class="tab-cat"
+                  onclick="filterByCategory('Bánh kẹo', this)">Bánh kẹo</span>
+            <span class="tab-cat"
+                  onclick="filterByCategory('Đồ uống', this)">Đồ uống</span>
         </div>
+    </div>
+</header>
 
+<!-- ================= PRODUCT LIST ================= -->
+<main
+        id="productList"
+        class="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 px-6 py-10">
+    <!-- JS render -->
+</main>
+
+<!-- ================= PRODUCT MODAL (SHOPIFY PREMIUM) ================= -->
+<div id="productModal" class="modal hidden">
+
+    <div class="modal-overlay" onclick="closeProductModal()"></div>
+
+    <div class="modal-content">
+
+        <button class="modal-close" onclick="closeProductModal()">×</button>
+
+        <div class="shopify-product">
+
+            <!-- MEDIA -->
+            <div class="sp-media">
+                <div class="sp-main skeleton">
+                    <img id="modalMainImg" loading="lazy" />
+                </div>
+                <div id="modalThumbnails" class="sp-thumbs"></div>
+            </div>
+
+            <!-- INFO -->
+            <div class="sp-info">
+                <h1 id="modalName" class="skeleton-text"></h1>
+                <div id="modalPrice" class="sp-price skeleton-text"></div>
+                <p id="modalDesc" class="sp-desc skeleton-text"></p>
+
+                <button class="sp-cta">
+                    LIÊN HỆ ĐẶT HÀNG
+                </button>
+            </div>
+
+        </div>
     </div>
 </div>
 
-<!-- Sticky CTA Mobile -->
+<!-- ================= LIGHTBOX ================= -->
+<div id="lightbox" class="lightbox hidden" onclick="closeLightbox()">
+    <img id="lightboxImg">
+</div>
+
+<!-- ================= STICKY CTA MOBILE ================= -->
 <div class="sticky-cta">
-    <button>Liên hệ đặt hàng</button>
+    <button>LIÊN HỆ ĐẶT HÀNG</button>
+</div>
+
+<!-- ================= ADMIN MODAL ================= -->
+<div id="adminModal" class="admin-modal hidden">
+    <div class="admin-panel">
+
+        <button class="admin-close" onclick="closeAdmin()">×</button>
+
+        <h3 class="admin-title">Admin Products</h3>
+
+        <!-- LIST -->
+        <div id="adminList" class="admin-list"></div>
+
+        <hr class="my-4">
+
+        <!-- EDITOR -->
+        <h4 class="text-xs font-bold uppercase text-gray-400 mb-2">
+            Editor
+        </h4>
+
+        <input id="aName" placeholder="Tên sản phẩm" class="admin-input">
+        <input id="aPrice" placeholder="Giá" class="admin-input">
+
+        <select id="aCat" class="admin-input">
+            <option>Thực phẩm chức năng</option>
+            <option>Quần áo</option>
+            <option>Bánh kẹo</option>
+            <option>Đồ uống</option>
+        </select>
+
+        <textarea id="aDesc"
+                  placeholder="Mô tả"
+                  class="admin-input h-24"></textarea>
+
+        <!-- IMAGE UPLOAD -->
+        <input type="file"
+               id="aFile"
+               accept="image/*"
+               multiple
+               class="admin-input">
+
+        <div id="imgPreview" class="img-preview"></div>
+
+        <!-- ACTIONS -->
+        <button class="admin-btn save" onclick="saveAdminProduct()">💾 Lưu</button>
+        <button class="admin-btn add" onclick="addNewProduct()">➕ Thêm mới</button>
+
+    </div>
 </div>
 
 <script src="script.js"></script>
