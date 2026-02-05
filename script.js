@@ -5,213 +5,151 @@ let currentImageList = [];
 let editingProduct = null;
 let currentImgIndex = 0;
 
-// 1. TẢI DỮ LIỆU & TỰ ĐỘNG TẠO BẢNG
+// 1. TẢI DỮ LIỆU
 async function fetchProducts() {
     try {
         const res = await fetch('/api/get-products');
-        if (!res.ok) throw new Error("Lỗi kết nối API");
+        if (!res.ok) throw new Error("Lỗi API");
         products = await res.json();
         renderProducts();
-
-        // Cập nhật danh sách admin nếu đang mở
-        const adminModal = document.getElementById('adminModal');
-        if (adminModal && !adminModal.classList.contains('hidden')) {
+        if (!document.getElementById('adminModal').classList.contains('hidden')) {
             renderAdminList();
         }
-    } catch (err) {
-        console.error("Fetch Error:", err);
-    }
+    } catch (err) { console.error(err); }
 }
 
-// 2. HIỂN THỊ TRANG CHỦ (GIỮ TEXT GỐC)
+// 2. HIỂN THỊ TRANG CHỦ
 function renderProducts(data = products) {
     const list = document.getElementById('productList');
     if (!list) return;
     list.innerHTML = data.map((p, i) => `
-        <div onclick="openDetail(${i})" class="product-card cursor-pointer group p-3 bg-white rounded-lg shadow-sm border border-gray-100 animate-slide-up">
-            <div class="aspect-square mb-3 overflow-hidden rounded bg-gray-50 flex items-center justify-center">
-                <img src="${p.images[0]}" class="max-w-full max-h-full object-contain group-hover:scale-110 transition-transform duration-500">
+        <div onclick="openDetail(${i})" class="product-card cursor-pointer bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col animate-fade-up" style="animation-delay: ${i * 0.05}s">
+            <div class="aspect-square mb-4 overflow-hidden rounded-xl bg-gray-50 flex items-center justify-center">
+                <img src="${p.images[0]}" class="max-w-full max-h-full object-contain">
             </div>
-            <div class="text-center">
-                <h3 class="text-xs font-semibold text-gray-700 h-8 line-clamp-2 uppercase leading-tight">${p.name}</h3>
-                <p class="text-red-600 font-bold text-lg mt-2">${new Intl.NumberFormat('vi-VN').format(p.price)}đ</p>
+            <div class="flex-grow flex flex-col justify-between">
+                <h3 class="text-xs font-bold text-gray-700 h-8 line-clamp-2 uppercase leading-tight">${p.name}</h3>
+                <p class="text-red-600 font-extrabold text-lg mt-3">${new Intl.NumberFormat('vi-VN').format(p.price)}đ</p>
             </div>
         </div>`).join('');
 }
 
-// 3. CHI TIẾT SẢN PHẨM & LIGHTBOX
+// 3. CHI TIẾT SẢN PHẨM & ZOOM
 function openDetail(i) {
     const p = products[i];
     editingProduct = p;
     currentImgIndex = 0;
-
     document.getElementById('modalName').innerText = p.name;
     document.getElementById('modalPrice').innerText = new Intl.NumberFormat('vi-VN').format(p.price) + 'đ';
     document.getElementById('modalDesc').innerText = p.desc;
-
     updateModalImage();
 
     const thumbContainer = document.getElementById('modalThumbnails');
     thumbContainer.innerHTML = p.images.map((src, idx) => `
-        <img src="${src}" onclick="selectThumb(${idx})" 
-             class="w-16 h-16 object-cover border-2 rounded cursor-pointer transition-all ${idx === 0 ? 'border-red-500 scale-105' : 'border-transparent opacity-60'}">
+        <img src="${src}" onclick="selectThumb(${idx})" class="w-16 h-16 object-cover border-2 rounded-lg cursor-pointer transition-all ${idx === 0 ? 'border-red-600 scale-105 shadow-md' : 'border-transparent opacity-50'}">
     `).join('');
-
     document.getElementById('productModal').classList.replace('hidden', 'flex');
 }
 
 // Phóng to ảnh (Lightbox)
 document.getElementById('modalMainImg').onclick = function() {
-    const lightbox = document.getElementById('lightbox');
-    const lightboxImg = document.getElementById('lightboxImg');
-    if (lightbox && lightboxImg) {
-        lightboxImg.src = this.src;
-        lightbox.classList.replace('hidden', 'flex');
-    }
-};
-
-function closeLightbox() {
-    document.getElementById('lightbox').classList.replace('flex', 'hidden');
+    const lb = document.getElementById('lightbox');
+    document.getElementById('lightboxImg').src = this.src;
+    lb.classList.replace('hidden', 'flex');
 }
+
+function closeLightbox() { document.getElementById('lightbox').classList.replace('flex', 'hidden'); }
 
 function updateModalImage() {
-    const imgElement = document.getElementById('modalMainImg');
-    if (!imgElement || !editingProduct) return;
-    imgElement.style.opacity = '0.3';
+    const imgEl = document.getElementById('modalMainImg');
+    imgEl.style.opacity = '0.3';
     setTimeout(() => {
-        imgElement.src = editingProduct.images[currentImgIndex];
-        imgElement.style.opacity = '1';
+        imgEl.src = editingProduct.images[currentImgIndex];
+        imgEl.style.opacity = '1';
         const thumbs = document.querySelectorAll('#modalThumbnails img');
         thumbs.forEach((t, idx) => {
-            t.classList.toggle('border-red-500', idx === currentImgIndex);
-            t.classList.toggle('opacity-60', idx !== currentImgIndex);
+            t.classList.toggle('border-red-600', idx === currentImgIndex);
+            t.classList.toggle('scale-105', idx === currentImgIndex);
+            t.classList.toggle('opacity-50', idx !== currentImgIndex);
+            t.classList.toggle('shadow-md', idx === currentImgIndex);
         });
-    }, 100);
+    }, 150);
 }
 
-function selectThumb(idx) {
-    currentImgIndex = idx;
-    updateModalImage();
-}
+function selectThumb(idx) { currentImgIndex = idx; updateModalImage(); }
+function nextImage() { if(editingProduct?.images.length > 1) { currentImgIndex = (currentImgIndex + 1) % editingProduct.images.length; updateModalImage(); } }
+function prevImage() { if(editingProduct?.images.length > 1) { currentImgIndex = (currentImgIndex - 1 + editingProduct.images.length) % editingProduct.images.length; updateModalImage(); } }
 
-function nextImage() {
-    if (editingProduct?.images.length > 1) {
-        currentImgIndex = (currentImgIndex + 1) % editingProduct.images.length;
-        updateModalImage();
-    }
-}
-
-function prevImage() {
-    if (editingProduct?.images.length > 1) {
-        currentImgIndex = (currentImgIndex - 1 + editingProduct.images.length) % editingProduct.images.length;
-        updateModalImage();
-    }
-}
-
-// 4. QUẢN TRỊ ADMIN (FIX LỖI accessAdmin)
+// 4. ADMIN & SỬA LỖI ĐÓNG
 function accessAdmin() {
-    const pass = prompt("Nhập mật khẩu quản trị:");
-    if (pass === ADMIN_PASSWORD) {
+    if (prompt("Mật khẩu quản trị:") === ADMIN_PASSWORD) {
         renderAdminList();
         document.getElementById('adminModal').classList.replace('hidden', 'flex');
-    } else {
-        alert("Sai mật khẩu!");
-    }
+    } else alert("Sai mật khẩu!");
+}
+
+function closeAdminModal() {
+    document.getElementById('adminModal').classList.replace('flex', 'hidden');
+    editingIndex = null; clearForm();
+}
+
+function closeProductModal() {
+    document.getElementById('productModal').classList.replace('flex', 'hidden');
+    editingProduct = null;
 }
 
 async function saveProduct() {
     const nameEl = document.getElementById('pName');
     const priceEl = document.getElementById('pPrice');
     const btn = document.getElementById('btnSave');
-
     if (!nameEl.value || !priceEl.value || currentImageList.length === 0) return alert("Vui lòng điền đủ thông tin!");
 
     btn.innerText = "ĐANG LƯU...";
     btn.disabled = true;
+    document.getElementById('loadingImg').classList.replace('hidden', 'flex');
+
+    const payload = {
+        name: nameEl.value,
+        price: priceEl.value.replace(/\D/g, ''),
+        category: document.getElementById('pCat').value,
+        desc: document.getElementById('pDesc').value,
+        images: currentImageList
+    };
 
     try {
-        const payload = {
-            name: nameEl.value,
-            price: priceEl.value.replace(/\D/g, ''),
-            category: document.getElementById('pCat').value,
-            desc: document.getElementById('pDesc').value,
-            images: currentImageList
-        };
-
         const res = await fetch('/api/save-product', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ index: editingIndex, product: payload, isDelete: false })
         });
-
         if (res.ok) {
-            btn.innerText = "THÀNH CÔNG!";
-            btn.style.backgroundColor = "#16a34a";
             await fetchProducts();
             setTimeout(() => {
                 clearForm();
                 editingIndex = null;
-                btn.innerText = "LƯU SẢN PHẨM";
-                btn.style.backgroundColor = "";
+                btn.innerText = "Lưu sản phẩm";
                 btn.disabled = false;
+                document.getElementById('loadingImg').classList.replace('flex', 'hidden');
                 nameEl.focus();
-            }, 1000);
+            }, 800);
         }
-    } catch (err) { alert("Lỗi hệ thống!"); btn.disabled = false; }
+    } catch (err) { alert("Lỗi lưu dữ liệu!"); btn.disabled = false; }
 }
 
-// HÀM ĐÓNG MODAL (FIX LỖI DẤU X)
-function closeAdminModal() {
-    document.getElementById('adminModal').classList.replace('flex', 'hidden');
-    editingIndex = null;
-    clearForm();
-}
-
-function closeProductModal() {
-    document.getElementById('productModal').classList.replace('flex', 'hidden');
-}
-
-// 5. CÁC TIỆN ÍCH
+// 5. CÁC TIỆN ÍCH KHÁC
 function renderAdminList() {
     const list = document.getElementById('adminManageList');
-    if (!list) return;
     list.innerHTML = products.map((p, i) => `
-        <div class="flex justify-between p-3 border-b items-center bg-white hover:bg-gray-50 transition-colors">
+        <div class="flex justify-between p-3 border-b items-center bg-white hover:bg-red-50 transition-colors rounded-lg">
             <div class="flex items-center gap-2">
-                <img src="${p.images[0]}" class="w-8 h-8 object-cover rounded">
-                <span class="text-[10px] uppercase font-bold truncate w-32">${p.name}</span>
+                <img src="${p.images[0]}" class="w-10 h-10 object-cover rounded-lg shadow-sm">
+                <span class="text-[10px] uppercase font-bold truncate w-24 text-gray-600">${p.name}</span>
             </div>
-            <div class="flex gap-2">
-                <button onclick="editProduct(${i})" class="bg-gray-100 px-3 py-1 text-[9px] font-bold rounded hover:bg-gray-200">SỬA</button>
-                <button onclick="deleteProduct(${i})" class="text-red-500 border border-red-500 px-3 py-1 text-[9px] font-bold rounded">XÓA</button>
+            <div class="flex gap-1">
+                <button onclick="editProduct(${i})" class="bg-gray-100 p-2 rounded-lg hover:bg-gray-200 transition-all"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
+                <button onclick="deleteProduct(${i})" class="bg-red-50 text-red-600 p-2 rounded-lg hover:bg-red-600 hover:text-white transition-all"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
             </div>
         </div>`).join('');
-}
-
-function editProduct(i) {
-    editingIndex = i;
-    const p = products[i];
-    document.getElementById('pName').value = p.name;
-    document.getElementById('pPrice').value = p.price;
-    document.getElementById('pCat').value = p.category;
-    document.getElementById('pDesc').value = p.desc;
-    currentImageList = p.images;
-    const preview = document.getElementById('previewContainer');
-    preview.innerHTML = currentImageList.map(img => `<img src="${img}" class="h-20 rounded shadow">`).join('');
-    preview.classList.remove('hidden');
-    document.getElementById('pName').focus();
-}
-
-async function deleteProduct(i) {
-    if (!confirm("Xác nhận xóa sản phẩm?")) return;
-    try {
-        await fetch('/api/save-product', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ index: i, product: null, isDelete: true })
-        });
-        await fetchProducts();
-    } catch (err) { alert("Lỗi khi xóa!"); }
 }
 
 function handleSearch(e) {
@@ -225,58 +163,13 @@ function filterByCategory(cat, el) {
     renderProducts(cat === 'Tất cả' ? products : products.filter(p => p.category === cat));
 }
 
-// XỬ LÝ ẢNH & BÀN PHÍM
-async function compressImage(file) {
-    return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = (e) => {
-            const img = new Image();
-            img.src = e.target.result;
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const MAX_WIDTH = 600;
-                let width = img.width, height = img.height;
-                if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
-                canvas.width = width; canvas.height = height;
-                canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-                resolve(canvas.toDataURL('image/jpeg', 0.7));
-            };
-        };
-    });
-}
-
-document.getElementById('pFileInput')?.addEventListener('change', async function(e) {
-    const files = Array.from(e.target.files);
-    if (files.length) {
-        document.getElementById('loadingImg').classList.remove('hidden');
-        currentImageList = await Promise.all(files.map(f => compressImage(f)));
-        const preview = document.getElementById('previewContainer');
-        preview.innerHTML = currentImageList.map(img => `<img src="${img}" class="h-20 rounded shadow">`).join('');
-        preview.classList.remove('hidden');
-        document.getElementById('loadingImg').classList.add('hidden');
-    }
-});
-
-function clearForm() {
-    document.getElementById('pName').value = "";
-    document.getElementById('pPrice').value = "";
-    document.getElementById('pDesc').value = "";
-    document.getElementById('previewContainer').innerHTML = "";
-    document.getElementById('previewContainer').classList.add('hidden');
-    document.getElementById('pFileInput').value = "";
-    currentImageList = [];
-}
-
+// BÀN PHÍM & KHỞI CHẠY
 document.addEventListener('keydown', (e) => {
-    const pModal = document.getElementById('productModal');
-    if (pModal && !pModal.classList.contains('hidden')) {
+    if (e.key === 'Escape') { closeProductModal(); closeAdminModal(); closeLightbox(); }
+    if (!document.getElementById('productModal').classList.contains('hidden')) {
         if (e.key === 'ArrowRight') nextImage();
         if (e.key === 'ArrowLeft') prevImage();
-        if (e.key === 'Escape') { closeProductModal(); closeLightbox(); }
     }
-    if (e.key === 'Escape') closeAdminModal();
 });
 
-// KHỞI CHẠY
 fetchProducts();
