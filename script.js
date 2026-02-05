@@ -8,7 +8,7 @@ let currentImgIndex = 0;
 // 1. TẢI DỮ LIỆU TỪ NEON DATABASE
 async function fetchProducts() {
     try {
-        const res = await fetch('/.netlify/functions/get-products');
+        const res = await fetch('/api/get-products');
         if (!res.ok) throw new Error("Lỗi kết nối database");
         products = await res.json();
         renderProducts();
@@ -116,7 +116,7 @@ async function saveProduct() {
     };
 
     try {
-        const res = await fetch('/.netlify/functions/save-product', {
+        const res = await fetch('/api/save-product', {
             method: 'POST',
             body: JSON.stringify({ index: editingIndex, product: payload, isDelete: false })
         });
@@ -144,7 +144,7 @@ async function saveProduct() {
 async function deleteProduct(i) {
     if (confirm("Xác nhận xóa sản phẩm khỏi Database?")) {
         try {
-            const res = await fetch('/.netlify/functions/save-product', {
+            const res = await fetch('/api/save-product', {
                 method: 'POST',
                 body: JSON.stringify({ index: i, product: null, isDelete: true })
             });
