@@ -51,20 +51,26 @@
     </div>
 </footer>
 
-<div id="productModal" class="fixed inset-0 bg-black/50 hidden z-50 items-center justify-center p-4 backdrop-blur-md">
-    <div class="bg-white max-w-4xl w-full flex flex-col md:flex-row relative shadow-2xl rounded-lg overflow-hidden animate-in zoom-in duration-300">
-        <button onclick="document.getElementById('productModal').classList.replace('flex', 'hidden')" class="absolute top-5 right-5 text-2xl z-10">&times;</button>
-        <div class="md:w-1/2 p-4 bg-white border-r flex flex-col">
-            <div class="aspect-square mb-4 flex items-center justify-center bg-gray-50 rounded overflow-hidden">
-                <img id="modalMainImg" src="" class="max-h-full max-w-full object-contain">
+<div id="productModal" class="fixed inset-0 bg-black/50 hidden z-50 items-center justify-center p-4">
+    <div class="bg-white max-w-5xl w-full flex flex-col md:flex-row relative rounded-lg overflow-hidden shadow-2xl">
+        <button onclick="document.getElementById('productModal').classList.replace('flex', 'hidden')" class="absolute top-4 right-4 text-2xl z-10">&times;</button>
+
+        <div class="md:w-3/5 p-4 flex flex-col md:flex-row gap-4 bg-gray-50">
+            <div id="modalThumbnails" class="flex md:flex-col gap-2 order-2 md:order-1 overflow-x-auto md:w-20"></div>
+            <div class="flex-grow flex items-center justify-center bg-white rounded order-1 md:order-2 p-4">
+                <img id="modalMainImg" src="" class="max-h-[70vh] object-contain">
             </div>
-            <div id="modalThumbnails" class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide"></div>
         </div>
-        <div class="md:w-1/2 p-8 md:p-12 flex flex-col justify-center">
-            <h2 id="modalName" class="text-2xl font-bold mb-4 text-gray-800 uppercase leading-tight"></h2>
-            <p id="modalPrice" class="text-3xl text-red-600 font-bold mb-6 tracking-tighter"></p>
-            <div class="h-1 bg-red-600 w-12 mb-8"></div>
-            <p id="modalDesc" class="text-gray-600 text-sm leading-relaxed italic"></p>
+
+        <div class="md:w-2/5 p-8 flex flex-col justify-center">
+            <h2 id="modalName" class="text-3xl font-bold mb-4 text-gray-800 leading-tight"></h2>
+            <div class="flex items-baseline gap-2 mb-6">
+                <span class="text-gray-500 text-sm italic">Giá:</span>
+                <p id="modalPrice" class="text-3xl font-bold text-red-600"></p>
+            </div>
+            <div class="h-1 bg-red-600 w-16 mb-8"></div>
+            <p id="modalDesc" class="text-gray-600 text-sm leading-relaxed mb-10"></p>
+            <button class="bg-green-600 text-white py-4 rounded-full font-bold shadow-lg hover:bg-green-700 transition-all">MUA NGAY QUA ZALO</button>
         </div>
     </div>
 </div>
