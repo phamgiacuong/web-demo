@@ -5,31 +5,7 @@ let currentImageList = [];
 let editingProduct = null;
 let currentImgIndex = 0;
 
-// --- HÀM TIỆN ÍCH ---
-
-// Định dạng tiền tệ: 160000 -> 160.000đ
-function formatPrice(p) {
-    return new Intl.NumberFormat('vi-VN').format(p.toString().replace(/\D/g, '')) + 'đ';
-}
-
-// Hiển thị thông báo trạng thái trên nút Lưu
-function showNotify(msg, isError = false) {
-    const btn = document.getElementById('btnSave');
-    if (btn) {
-        const originalText = "LƯU SẢN PHẨM";
-        btn.innerText = msg;
-        btn.style.backgroundColor = isError ? "#dc2626" : "#16a34a"; // Đỏ nếu lỗi, Xanh nếu thành công
-        setTimeout(() => {
-            btn.innerText = originalText;
-            btn.style.backgroundColor = "";
-            btn.disabled = false;
-        }, 2000);
-    }
-}
-
-// --- CHỨC NĂNG CHÍNH ---
-
-// 1. Tải dữ liệu từ API Vercel (Neon Database)
+// --- 1. TẢI DỮ LIỆU & ĐỒNG BỘ ---
 async function fetchProducts() {
     try {
         const res = await fetch('/api/get-products');
@@ -39,13 +15,19 @@ async function fetchProducts() {
         }
         products = await res.json();
         renderProducts();
+
+        // Cập nhật luôn danh sách trong phần quản trị nếu nó đang mở
+        const adminModal = document.getElementById('adminModal');
+        if (adminModal && !adminModal.classList.contains('hidden')) {
+            renderAdminList();
+        }
     } catch (err) {
         console.error("Fetch Error:", err);
-        alert("KHÔNG THỂ TẢI DỮ LIỆU: " + err.message);
+        alert("KHÔNG THỂ KẾT NỐI SERVER: " + err.message);
     }
 }
 
-// 2. Hiển thị danh sách sản phẩm ra màn hình chính
+// --- 2. HIỂN THỊ TRANG CHỦ ---
 function renderProducts(data = products) {
     const list = document.getElementById('productList');
     if (!list) return;
@@ -56,24 +38,23 @@ function renderProducts(data = products) {
             </div>
             <div class="text-center">
                 <h3 class="text-xs font-semibold text-gray-700 h-8 line-clamp-2 uppercase leading-tight">${p.name}</h3>
-                <p class="text-red-600 font-bold text-lg mt-2">${formatPrice(p.price)}</p>
+                <p class="text-red-600 font-bold text-lg mt-2">${new Intl.NumberFormat('vi-VN').format(p.price)}đ</p>
             </div>
         </div>`).join('');
 }
 
-// 3. Mở chi tiết sản phẩm (Kiểu Vitamin House)
+// --- 3. CHI TIẾT SẢN PHẨM & LIGHTBOX ---
 function openDetail(i) {
     const p = products[i];
     editingProduct = p;
     currentImgIndex = 0;
 
     document.getElementById('modalName').innerText = p.name;
-    document.getElementById('modalPrice').innerText = formatPrice(p.price);
+    document.getElementById('modalPrice').innerText = new Intl.NumberFormat('vi-VN').format(p.price) + 'đ';
     document.getElementById('modalDesc').innerText = p.desc;
 
     updateModalImage();
 
-    // Render ảnh nhỏ (thumbnails)
     const thumbContainer = document.getElementById('modalThumbnails');
     thumbContainer.innerHTML = p.images.map((src, idx) => `
         <img src="${src}" onclick="selectThumb(${idx})" 
@@ -83,20 +64,27 @@ function openDetail(i) {
     document.getElementById('productModal').classList.replace('hidden', 'flex');
 }
 
-// --- ĐIỀU HƯỚNG ẢNH ---
+// Phóng to ảnh khi click vào ảnh chính
+document.getElementById('modalMainImg').onclick = function() {
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightboxImg');
+    if (lightbox && lightboxImg) {
+        lightboxImg.src = this.src;
+        lightbox.classList.replace('hidden', 'flex');
+    }
+};
+
+function closeLightbox() {
+    document.getElementById('lightbox').classList.replace('flex', 'hidden');
+}
 
 function updateModalImage() {
     const imgElement = document.getElementById('modalMainImg');
     if (!imgElement || !editingProduct) return;
+    imgElement.src = editingProduct.images[currentImgIndex];
 
-    imgElement.style.opacity = '0.3'; // Hiệu ứng chuyển ảnh mờ nhẹ
-    setTimeout(() => {
-        imgElement.src = editingProduct.images[currentImgIndex];
-        imgElement.style.opacity = '1';
-        // Cập nhật border cho ảnh nhỏ tương ứng
-        const thumbs = document.querySelectorAll('#modalThumbnails img');
-        thumbs.forEach((t, idx) => t.classList.toggle('border-red-500', idx === currentImgIndex));
-    }, 100);
+    const thumbs = document.querySelectorAll('#modalThumbnails img');
+    thumbs.forEach((t, idx) => t.classList.toggle('border-red-500', idx === currentImgIndex));
 }
 
 function selectThumb(idx) {
@@ -118,32 +106,14 @@ function prevImage() {
     }
 }
 
-// Lắng nghe phím mũi tên và Esc
-document.addEventListener('keydown', (e) => {
-    const modal = document.getElementById('productModal');
-    if (modal && !modal.classList.contains('hidden')) {
-        if (e.key === 'ArrowRight') nextImage();
-        if (e.key === 'ArrowLeft') prevImage();
-        if (e.key === 'Escape') closeDetail();
-    }
-});
+// --- 4. QUẢN TRỊ (ADMIN) ---
 
-function closeDetail() {
-    document.getElementById('productModal').classList.replace('flex', 'hidden');
-    editingProduct = null;
-}
-
-// --- QUẢN TRỊ (ADMIN) ---
-
-// Lưu sản phẩm (Thêm/Sửa - Nhập tiếp liên tục)
 async function saveProduct() {
     const nameEl = document.getElementById('pName');
     const priceEl = document.getElementById('pPrice');
     const btn = document.getElementById('btnSave');
 
-    if (!nameEl.value || !priceEl.value || currentImageList.length === 0) {
-        return alert("Vui lòng điền đủ Tên, Giá và chọn ít nhất 1 Ảnh!");
-    }
+    if (!nameEl.value || !priceEl.value || currentImageList.length === 0) return alert("Vui lòng điền đủ thông tin!");
 
     btn.innerText = "ĐANG LƯU...";
     btn.disabled = true;
@@ -164,53 +134,86 @@ async function saveProduct() {
         });
 
         if (res.ok) {
-            showNotify("THÀNH CÔNG!");
-            await fetchProducts();
+            btn.innerText = "THÀNH CÔNG!";
+            btn.style.backgroundColor = "#16a34a";
+
+            await fetchProducts(); // Tải lại data và render luôn admin list
 
             setTimeout(() => {
                 clearForm();
                 editingIndex = null;
-                // NẾU BẠN MUỐN TẮT POPUP ADMIN SAU KHI LƯU:
-                // closeAdminModal();
-
-                // NẾU MUỐN Ở LẠI ĐỂ NHẬP TIẾP:
-                document.getElementById('pName').focus();
+                btn.innerText = "LƯU SẢN PHẨM";
+                btn.style.backgroundColor = "";
+                btn.disabled = false;
+                nameEl.focus();
             }, 1000);
         } else {
-            const result = await res.json();
-            throw new Error(result.error);
+            const err = await res.json();
+            throw new Error(err.error);
         }
     } catch (err) {
-        showNotify("LỖI: " + err.message, true);
+        btn.innerText = "LỖI!";
+        btn.style.backgroundColor = "#dc2626";
+        btn.disabled = false;
+        alert(err.message);
     }
 }
 
-// Xóa sản phẩm
 async function deleteProduct(i) {
-    if (!confirm("Xác nhận xóa sản phẩm này khỏi hệ thống?")) return;
-
+    if (!confirm("Xác nhận xóa sản phẩm này?")) return;
     try {
         const res = await fetch('/api/save-product', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ index: i, product: null, isDelete: true })
         });
-
         if (res.ok) {
-            alert("Đã xóa xong!");
             await fetchProducts();
-            renderAdminList();
-        } else {
-            const result = await res.json();
-            throw new Error(result.error);
         }
-    } catch (err) {
-        alert("LỖI XÓA: " + err.message);
-        await fetchProducts(); // Đồng bộ lại dữ liệu
-    }
+    } catch (err) { alert("Lỗi khi xóa!"); }
 }
 
-// --- XỬ LÝ ẢNH ---
+function renderAdminList() {
+    const list = document.getElementById('adminManageList');
+    if (!list) return;
+    list.innerHTML = products.map((p, i) => `
+        <div class="flex justify-between p-3 border-b items-center bg-white">
+            <div class="flex items-center gap-2">
+                <img src="${p.images[0]}" class="w-8 h-8 object-cover rounded">
+                <span class="text-[10px] uppercase font-bold truncate w-32">${p.name}</span>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="editProduct(${i})" class="bg-gray-100 px-3 py-1 text-[9px] font-bold rounded">SỬA</button>
+                <button onclick="deleteProduct(${i})" class="text-red-500 border border-red-500 px-3 py-1 text-[9px] font-bold rounded">XÓA</button>
+            </div>
+        </div>`).join('');
+}
+
+// Các hàm đóng Modal (Fix lỗi dấu X)
+function closeAdminModal() {
+    document.getElementById('adminModal').classList.replace('flex', 'hidden');
+    editingIndex = null;
+    clearForm();
+}
+
+function closeProductModal() {
+    document.getElementById('productModal').classList.replace('flex', 'hidden');
+}
+
+function editProduct(i) {
+    editingIndex = i;
+    const p = products[i];
+    document.getElementById('pName').value = p.name;
+    document.getElementById('pPrice').value = p.price;
+    document.getElementById('pCat').value = p.category;
+    document.getElementById('pDesc').value = p.desc;
+    currentImageList = p.images;
+    const preview = document.getElementById('previewContainer');
+    preview.innerHTML = currentImageList.map(img => `<img src="${img}" class="h-20 rounded shadow">`).join('');
+    preview.classList.remove('hidden');
+}
+
+// --- 5. XỬ LÝ ẢNH & BÀN PHÍM ---
 
 async function compressImage(file) {
     return new Promise((resolve) => {
@@ -238,48 +241,21 @@ document.getElementById('pFileInput')?.addEventListener('change', async function
         document.getElementById('loadingImg').style.display = 'flex';
         currentImageList = await Promise.all(files.map(f => compressImage(f)));
         const preview = document.getElementById('previewContainer');
-        preview.innerHTML = currentImageList.map(img => `<img src="${img}" class="h-20 rounded shadow-sm">`).join('');
+        preview.innerHTML = currentImageList.map(img => `<img src="${img}" class="h-20 rounded shadow">`).join('');
         preview.classList.remove('hidden');
         document.getElementById('loadingImg').style.display = 'none';
     }
 });
 
-// --- TIỆN ÍCH KHÁC ---
-
-function accessAdmin() {
-    if (prompt("Nhập mật khẩu quản trị:") === ADMIN_PASSWORD) {
-        renderAdminList();
-        document.getElementById('adminModal').classList.replace('hidden', 'flex');
-    } else alert("Sai mật khẩu!");
-}
-
-function renderAdminList() {
-    const list = document.getElementById('adminManageList');
-    list.innerHTML = products.map((p, i) => `
-        <div class="flex justify-between p-3 border-b items-center bg-white hover:bg-gray-50">
-            <div class="flex items-center gap-2">
-                <img src="${p.images[0]}" class="w-8 h-8 object-cover rounded">
-                <span class="text-[10px] uppercase font-bold truncate w-32">${p.name}</span>
-            </div>
-            <div class="flex gap-2">
-                <button onclick="editProduct(${i})" class="bg-gray-100 px-3 py-1 text-[9px] font-bold rounded">SỬA</button>
-                <button onclick="deleteProduct(${i})" class="text-red-500 border border-red-500 px-3 py-1 text-[9px] font-bold rounded">XÓA</button>
-            </div>
-        </div>`).join('');
-}
-
-function editProduct(i) {
-    editingIndex = i;
-    const p = products[i];
-    document.getElementById('pName').value = p.name;
-    document.getElementById('pPrice').value = p.price;
-    document.getElementById('pCat').value = p.category;
-    document.getElementById('pDesc').value = p.desc;
-    currentImageList = p.images;
-    const preview = document.getElementById('previewContainer');
-    preview.innerHTML = currentImageList.map(img => `<img src="${img}" class="h-20 rounded">`).join('');
-    preview.classList.remove('hidden');
-}
+document.addEventListener('keydown', (e) => {
+    const pModal = document.getElementById('productModal');
+    if (pModal && !pModal.classList.contains('hidden')) {
+        if (e.key === 'ArrowRight') nextImage();
+        if (e.key === 'ArrowLeft') prevImage();
+        if (e.key === 'Escape') { closeProductModal(); closeLightbox(); }
+    }
+    if (e.key === 'Escape') closeAdminModal();
+});
 
 function clearForm() {
     document.getElementById('pName').value = "";
@@ -291,22 +267,11 @@ function clearForm() {
     currentImageList = [];
 }
 
-function closeAdminModal() {
-    document.getElementById('adminModal').classList.replace('flex', 'hidden');
-    editingIndex = null;
-    clearForm();
+function accessAdmin() {
+    if (prompt("Mật khẩu quản trị:") === ADMIN_PASSWORD) {
+        renderAdminList();
+        document.getElementById('adminModal').classList.replace('hidden', 'flex');
+    } else alert("Sai mật khẩu!");
 }
 
-function handleSearch(e) {
-    const term = e.target.value.toLowerCase();
-    renderProducts(products.filter(p => p.name.toLowerCase().includes(term)));
-}
-
-function filterByCategory(cat, el) {
-    document.querySelectorAll('.tab-cat').forEach(t => t.classList.remove('tab-active'));
-    el.classList.add('tab-active');
-    renderProducts(cat === 'Tất cả' ? products : products.filter(p => p.category === cat));
-}
-
-// KHỞI ĐỘNG
 fetchProducts();
