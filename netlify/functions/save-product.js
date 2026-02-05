@@ -1,28 +1,21 @@
-const { getStore } = require("@netlify/blobs");
+const { neon } = require('@neondatabase/serverless');
 
 exports.handler = async (event) => {
-    if (event.httpMethod !== "POST") {
-        return { statusCode: 405, body: "Method Not Allowed" };
-    }
-
+    const sql = neon(process.env.DATABASE_URL);
     try {
         const { index, product } = JSON.parse(event.body);
-        const store = getStore("shop-data");
 
-        let products = await store.get("products", { type: "json" }) || [];
-
-        if (index !== null && index >= 0) {
-            products[index] = product;
+        if (index !== null) {
+            // Cập nhật sản phẩm dựa trên ID (ở đây dùng logic đơn giản là lấy ID theo thứ tự)
+            const rows = await sql`SELECT id FROM products ORDER BY id ASC`;
+            const targetId = rows[index].id;
+            await sql`UPDATE products SET data = ${product} WHERE id = ${targetId}`;
         } else {
-            products.push(product);
+            // Thêm mới
+            await sql`INSERT INTO products (data) VALUES (${product})`;
         }
 
-        await store.setJSON("products", products);
-
-        return {
-            statusCode: 200,
-            body: JSON.stringify({ message: "Success", data: products })
-        };
+        return { statusCode: 200, body: "Success" };
     } catch (error) {
         return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
     }
