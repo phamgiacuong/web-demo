@@ -90,3 +90,37 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 .animate-card { animation: fadeInUp 0.4s ease backwards; }
+
+body { font-family: 'Noto Sans JP', sans-serif; }
+
+/* Hiệu ứng xuất hiện mượt mà */
+@keyframes slide-up {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes scale-up {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.animate-slide-up { animation: slide-up 0.4s ease-out; }
+.animate-scale-up { animation: scale-up 0.3s ease-out; }
+.animate-fade-in { animation: fade-in 0.3s ease; }
+
+/* Hiệu ứng Zoom khi di chuyển vào sản phẩm */
+.product-card img {
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.product-card:hover img {
+    transform: scale(1.1) rotate(1deg);
+}
+
+/* Hiệu ứng nút bấm kiểu Nhật (tối giản nhưng tinh tế) */
+button { transition: all 0.2s ease; }
+button:active { transform: scale(0.95); }
