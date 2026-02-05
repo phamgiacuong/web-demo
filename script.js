@@ -1,23 +1,44 @@
+/* ================= GLOBAL ================= */
+
 let products = [];
-let currentImgIndex = 0;
 let currentProduct = null;
+let currentImgIndex = 0;
+
+/* ADMIN */
+const ADMIN_PASSWORD = "123";
+let editingIndex = null;
+let adminImages = [];
+const MAX_IMAGES = 8;
+
+/* ================= FETCH PRODUCTS ================= */
 
 async function fetchProducts() {
-    const res = await fetch('/api/get-products');
-    products = await res.json();
-    renderProducts();
+    try {
+        const res = await fetch('/api/get-products');
+        products = await res.json();
+        renderProducts();
+        if (!document.getElementById('adminModal')?.classList.contains('hidden')) {
+            renderAdminList();
+        }
+    } catch (e) {
+        console.error(e);
+    }
 }
+
+/* ================= HOME RENDER ================= */
 
 function renderProducts(list = products) {
     const el = document.getElementById('productList');
+    if (!el) return;
+
     el.innerHTML = list.map((p, i) => `
     <div onclick="openDetail(${i})"
       class="product-card animate-pop"
       style="animation-delay:${i * 0.06}s">
       <div class="aspect-square mb-3 flex items-center justify-center">
-        <img src="${p.images[0]}" class="object-contain">
+        <img src="${p.images[0]}" class="object-contain max-h-full">
       </div>
-      <h3 class="text-xs font-bold uppercase">${p.name}</h3>
+      <h3 class="text-xs font-bold uppercase leading-tight">${p.name}</h3>
       <p class="product-price mt-2">
         ${new Intl.NumberFormat('vi-VN').format(p.price)}đ
       </p>
@@ -25,35 +46,55 @@ function renderProducts(list = products) {
   `).join('');
 }
 
+/* ================= PRODUCT DETAIL ================= */
+
 function openDetail(i) {
     currentProduct = products[i];
     currentImgIndex = 0;
 
     modalName.innerText = currentProduct.name;
-    modalPrice.innerText = new Intl.NumberFormat('vi-VN').format(currentProduct.price) + 'đ';
+    modalPrice.innerText =
+        new Intl.NumberFormat('vi-VN').format(currentProduct.price) + 'đ';
     modalDesc.innerText = currentProduct.desc;
-    modalMainImg.src = currentProduct.images[0];
 
-    modalThumbnails.innerHTML = currentProduct.images.map((img, idx) =>
-        `<img src="${img}" onclick="selectImg(${idx})" class="${idx===0?'active':''}">`
-    ).join('');
+    updateModalImage();
+
+    modalThumbnails.innerHTML = currentProduct.images.map((src, idx) => `
+    <img src="${src}"
+      onclick="selectThumb(${idx})"
+      class="${idx === 0 ? 'active' : ''}">
+  `).join('');
 
     productModal.classList.remove('hidden');
 }
 
-function selectImg(i) {
+function updateModalImage() {
+    modalMainImg.style.opacity = '0.3';
+    setTimeout(() => {
+        modalMainImg.src = currentProduct.images[currentImgIndex];
+        modalMainImg.style.opacity = '1';
+    }, 120);
+}
+
+function selectThumb(i) {
     currentImgIndex = i;
-    modalMainImg.src = currentProduct.images[i];
-    document.querySelectorAll('.thumbs img').forEach((el, idx) =>
-        el.classList.toggle('active', idx === i)
-    );
+    updateModalImage();
+    document.querySelectorAll('#modalThumbnails img').forEach((el, idx) => {
+        el.classList.toggle('active', idx === i);
+    });
 }
 
 function nextImage() {
-    selectImg((currentImgIndex + 1) % currentProduct.images.length);
+    currentImgIndex =
+        (currentImgIndex + 1) % currentProduct.images.length;
+    updateModalImage();
 }
+
 function prevImage() {
-    selectImg((currentImgIndex - 1 + currentProduct.images.length) % currentProduct.images.length);
+    currentImgIndex =
+        (currentImgIndex - 1 + currentProduct.images.length) %
+        currentProduct.images.length;
+    updateModalImage();
 }
 
 modalMainImg.onclick = () => {
@@ -61,47 +102,193 @@ modalMainImg.onclick = () => {
     lightbox.classList.remove('hidden');
 };
 
+function closeProductModal() {
+    productModal.classList.add('hidden');
+    currentProduct = null;
+}
+
 function closeLightbox() {
     lightbox.classList.add('hidden');
 }
-function closeProductModal() {
-    productModal.classList.add('hidden');
-}
+
+/* ================= SEARCH + FILTER ================= */
 
 function handleSearch(e) {
     const v = e.target.value.toLowerCase();
-    renderProducts(products.filter(p => p.name.toLowerCase().includes(v)));
+    renderProducts(products.filter(p =>
+        p.name.toLowerCase().includes(v)
+    ));
 }
 
 function filterByCategory(cat, el) {
-    document.querySelectorAll('.tab-cat').forEach(t => t.classList.remove('tab-active'));
+    document.querySelectorAll('.tab-cat')
+        .forEach(t => t.classList.remove('tab-active'));
     el.classList.add('tab-active');
-    renderProducts(cat === 'Tất cả' ? products : products.filter(p => p.category === cat));
+
+    renderProducts(
+        cat === 'Tất cả'
+            ? products
+            : products.filter(p => p.category === cat)
+    );
 }
-/* ================= ADMIN BASIC ================= */
 
-/* ===== ADMIN SECRET ===== */
-
-const ADMIN_PASSWORD = "123";
+/* ================= ADMIN SECRET ================= */
 
 function openAdmin() {
     const pass = prompt("Mật khẩu Admin:");
     if (pass === ADMIN_PASSWORD) {
-        document.getElementById('adminModal').classList.remove('hidden');
+        renderAdminList();
+        adminModal.classList.remove('hidden');
     } else {
         alert("Sai mật khẩu!");
     }
 }
 
 function closeAdmin() {
-    document.getElementById('adminModal').classList.add('hidden');
+    adminModal.classList.add('hidden');
+    editingIndex = null;
+    adminImages = [];
+    renderPreview();
 }
 
-/* SECRET KEY: Ctrl + Shift + A */
+/* Ctrl + Shift + A */
 document.addEventListener('keydown', (e) => {
     if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'a') {
         e.preventDefault();
         openAdmin();
     }
+
+    if (e.key === 'Escape') {
+        closeProductModal();
+        closeLightbox();
+        closeAdmin();
+    }
 });
+
+/* ================= ADMIN LIST ================= */
+
+function renderAdminList() {
+    adminList.innerHTML = products.map((p, i) => `
+    <div class="admin-item" draggable="true" data-index="${i}">
+      <img src="${p.images[0]}">
+      <div class="admin-item-name">${p.name}</div>
+      <div class="admin-actions">
+        <button class="edit" onclick="editProduct(${i})">Sửa</button>
+        <button class="delete" onclick="deleteProduct(${i})">Xoá</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ================= ADMIN EDIT / ADD ================= */
+
+function editProduct(i) {
+    const p = products[i];
+    editingIndex = i;
+
+    aName.value = p.name;
+    aPrice.value = p.price;
+    aCat.value = p.category;
+    aDesc.value = p.desc;
+
+    adminImages = [...p.images];
+    renderPreview();
+}
+
+function saveAdminProduct() {
+    if (!adminImages.length) {
+        alert("Cần ít nhất 1 ảnh!");
+        return;
+    }
+
+    const payload = {
+        name: aName.value,
+        price: aPrice.value,
+        category: aCat.value,
+        desc: aDesc.value,
+        images: adminImages
+    };
+
+    fetch('/api/save-product', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            index: editingIndex,
+            product: payload,
+            isDelete: false
+        })
+    }).then(() => {
+        fetchProducts();
+        editingIndex = null;
+        adminImages = [];
+        renderPreview();
+    });
+}
+
+function addNewProduct() {
+    editingIndex = null;
+    adminImages = [];
+    renderPreview();
+}
+
+/* ================= ADMIN DELETE (OPTIMISTIC) ================= */
+
+function deleteProduct(i) {
+    if (!confirm("Xoá sản phẩm này?")) return;
+
+    products.splice(i, 1);
+    renderAdminList();
+    renderProducts();
+
+    fetch('/api/save-product', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            index: i,
+            isDelete: true
+        })
+    });
+}
+
+/* ================= IMAGE UPLOAD (MULTI) ================= */
+
+aFile.addEventListener('change', (e) => {
+    [...e.target.files].forEach(file => {
+        if (!file.type.startsWith('image/')) return;
+        if (adminImages.length >= MAX_IMAGES) {
+            alert(`Tối đa ${MAX_IMAGES} ảnh`);
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            adminImages.push(reader.result);
+            renderPreview();
+        };
+        reader.readAsDataURL(file);
+    });
+
+    e.target.value = '';
+});
+
+function renderPreview() {
+    imgPreview.innerHTML = adminImages.map((src, i) => `
+    <div class="img-box">
+      <img src="${src}">
+      <button onclick="removeImg(${i})">×</button>
+    </div>
+  `).join('');
+
+    if (typeof imgCount !== 'undefined') {
+        imgCount.innerText = adminImages.length;
+    }
+}
+
+function removeImg(i) {
+    adminImages.splice(i, 1);
+    renderPreview();
+}
+
+/* ================= INIT ================= */
+
 fetchProducts();

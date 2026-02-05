@@ -74,20 +74,32 @@
 <!-- ADMIN MODAL -->
 <div id="adminModal" class="admin-modal hidden">
     <div class="admin-panel">
-        <button class="admin-close" onclick="closeAdmin()">×</button>
+    <button class="admin-close" onclick="closeAdmin()">×</button>
 
-        <h3 class="admin-title">Admin Dashboard</h3>
+    <h3 class="admin-title">Admin Products</h3>
 
-        <div class="admin-actions">
-            <button class="admin-btn">➕ Thêm sản phẩm</button>
-            <button class="admin-btn">✏️ Sửa sản phẩm</button>
-            <button class="admin-btn danger">🗑 Xóa sản phẩm</button>
-        </div>
+    <div id="adminList" class="admin-list"></div>
 
-        <p class="admin-note">
-            Shopify-style Admin – tối giản, nhanh, không làm phiền user 👌
-        </p>
-    </div>
+    <hr class="my-4">
+
+    <h4 class="text-xs font-bold uppercase text-gray-400 mb-2">Editor</h4>
+
+    <input id="aName" placeholder="Tên sản phẩm" class="admin-input">
+    <input id="aPrice" placeholder="Giá" class="admin-input">
+    <select id="aCat" class="admin-input">
+        <option>Thực phẩm chức năng</option>
+        <option>Quần áo</option>
+        <option>Bánh kẹo</option>
+        <option>Đồ uống</option>
+    </select>
+    <textarea id="aDesc" placeholder="Mô tả" class="admin-input h-24"></textarea>
+        <input type="file" id="aFile" accept="image/*" multiple class="admin-input">
+
+        <div id="imgPreview" class="img-preview"></div>
+
+    <button class="admin-btn save" onclick="saveAdminProduct()">💾 Lưu</button>
+    <button class="admin-btn add" onclick="addNewProduct()">➕ Thêm mới</button>
+</div>
 </div>
 
 <script src="script.js"></script>
