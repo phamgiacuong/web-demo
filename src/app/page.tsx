@@ -1,58 +1,74 @@
-// app/page.tsx
-import Link from 'next/link';
+// src/app/page.tsx
 import { getProducts } from './actions';
+import Hero from '../components/Hero';
+import ProductGrid from '../components/ProductGrid';
 
-export default async function Home({ searchParams }: { searchParams: { q?: string; cat?: string } }) {
+type SearchParams = Promise<{ q?: string; cat?: string }>;
+
+export default async function Home(props: {
+  searchParams: SearchParams
+}) {
+  const searchParams = await props.searchParams;
   const query = searchParams.q || '';
   const category = searchParams.cat || '';
-  const products = await getProducts(query, category);
+
+  // 1. Lấy dữ liệu từ Database
+  const rawProducts = await getProducts(query, category);
+
+  // 2. Ép kiểu Decimal -> Number để tránh lỗi khi truyền xuống Client Component
+  const products = rawProducts.map((product) => ({
+    ...product,
+    price: Number(product.price),
+  }));
 
   return (
-    <main className="container mx-auto p-4">
-      <header className="flex justify-between items-center mb-8 border-b pb-4">
-        <h1 className="text-3xl font-bold">MyShopify Clone</h1>
-        <Link href="/admin/add" className="bg-black text-white px-4 py-2 rounded">
-          + Thêm sản phẩm
-        </Link>
-      </header>
+    <main className="pb-20 min-h-screen">
+      {/* Banner đầu trang */}
+      <Hero />
 
-      {/* Search & Filter UI */}
-      <div className="flex gap-4 mb-6">
-        <form className="flex-1 flex gap-2">
-          <input
-            name="q"
-            defaultValue={query}
-            placeholder="Tìm kiếm sản phẩm..."
-            className="border p-2 rounded w-full"
-          />
-          <select name="cat" defaultValue={category} className="border p-2 rounded">
-            <option value="">Tất cả danh mục</option>
-            <option value="fashion">Thời trang</option>
-            <option value="tech">Công nghệ</option>
-            <option value="home">Đời sống</option>
-          </select>
-          <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">Lọc</button>
-        </form>
-      </div>
+      <div className="container mx-auto px-6">
+        {/* Header & Filter */}
+        <div className="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Sản phẩm nổi bật</h2>
+            <p className="text-gray-500">Tuyển chọn những món đồ tốt nhất dành cho bạn</p>
+          </div>
+          
+          <form className="flex gap-3 w-full md:w-auto bg-white p-2 rounded-full shadow-sm border border-gray-100">
+            <input 
+              name="q" 
+              defaultValue={query} 
+              placeholder="Tìm tên sản phẩm..." 
+              className="pl-4 outline-none text-sm bg-transparent w-full md:w-48"
+            />
+            <select 
+              name="cat" 
+              defaultValue={category} 
+              className="bg-gray-100 border-none py-2 px-4 rounded-full text-sm font-medium cursor-pointer hover:bg-gray-200 transition outline-none"
+            >
+              <option value="">Tất cả</option>
+              <option value="tpcn">Thực phẩm chức năng</option>
+              <option value="doan">Đồ ăn</option>
+              <option value="douong">Đồ uống</option>
+              <option value="quanao">Quần áo</option>
+            </select>
+            <button type="submit" className="bg-black text-white px-6 py-2 rounded-full text-sm font-bold shadow-md hover:bg-gray-800 transition">
+              Lọc
+            </button>
+          </form>
+        </div>
 
-      {/* Product Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {products.map((product) => (
-          <Link href={`/product/${product.id}`} key={product.id} className="border rounded-lg overflow-hidden hover:shadow-lg transition">
-            <div className="h-48 bg-gray-200 relative">
-              {/* Hiển thị ảnh đầu tiên */}
-              <img src={product.images[0] || 'https://via.placeholder.com/300'} alt={product.name} className="w-full h-full object-cover" />
-            </div>
-            <div className="p-4">
-              <h2 className="font-semibold text-lg truncate">{product.name}</h2>
-              <p className="text-gray-500 text-sm">{product.category}</p>
-              <p className="font-bold text-green-600 mt-2">${Number(product.price).toFixed(2)}</p>
-            </div>
-          </Link>
-        ))}
+        {/* 3. Truyền danh sách vào ProductGrid */}
+        <ProductGrid products={products} />
+        
+        {products.length === 0 && (
+          <div className="text-center py-20 bg-white rounded-3xl mt-8 shadow-sm border border-dashed border-gray-300">
+            <div className="text-4xl mb-4">📦</div>
+            <h3 className="text-xl font-bold text-gray-900">Không tìm thấy sản phẩm nào</h3>
+            <p className="text-gray-500 mt-2">Thử thay đổi bộ lọc hoặc tìm kiếm từ khóa khác.</p>
+          </div>
+        )}
       </div>
-      
-      {products.length === 0 && <p className="text-center text-gray-500">Không tìm thấy sản phẩm nào.</p>}
     </main>
   );
 }
