@@ -1,7 +1,7 @@
 const { neon } = require('@neondatabase/serverless');
 
 exports.handler = async () => {
-    const sql = neon(process.env.DATABASE_URL);
+    const sql = neon();
     try {
         // Tự động tạo bảng nếu chưa có
         await sql`CREATE TABLE IF NOT EXISTS products (

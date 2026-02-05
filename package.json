@@ -2,6 +2,7 @@
   "name": "hang-nhat-noi-dia-neon",
   "version": "1.0.0",
   "dependencies": {
-    "@neondatabase/serverless": "latest"
+    "@neondatabase/serverless": "latest",
+    "@netlify/neon": "latest"
   }
 }
