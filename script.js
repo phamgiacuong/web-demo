@@ -1,5 +1,5 @@
 /* ================== CONFIG ================== */
-const API_URL = '/api/get-product'; // 🔴 đổi nếu API bạn khác
+const API_URL = '/api/get-products'; // 🔴 đổi nếu API bạn khác
 
 /* ================== STATE ================== */
 let products = [];
