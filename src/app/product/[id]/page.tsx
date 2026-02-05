@@ -1,5 +1,5 @@
 // app/product/[id]/page.tsx
-import { getProductById } from '@/app/actions';
+import { getProductById } from '../../actions';
 import { notFound } from 'next/navigation';
 
 export default async function ProductDetail({ params }: { params: { id: string } }) {

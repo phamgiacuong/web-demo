@@ -1,5 +1,5 @@
 // app/admin/add/page.tsx
-import { addProduct } from '@/app/actions';
+import { addProduct } from '../../actions';
 
 export default function AddProductPage() {
   return (
