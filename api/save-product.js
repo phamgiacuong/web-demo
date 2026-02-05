@@ -1,33 +1,97 @@
-const { neon } = require('@neondatabase/serverless');
+const { neon } = require("@neondatabase/serverless");
 
 module.exports = async (req, res) => {
-    if (req.method !== 'POST') return res.status(405).json({ error: "Method Not Allowed" });
+    // ===== CORS =====
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+    if (req.method === "OPTIONS") {
+        return res.status(200).end();
+    }
+
+    if (req.method !== "POST") {
+        return res.status(405).json({ error: "Method Not Allowed" });
+    }
 
     const connectionString = process.env.DATABASE_URL;
-    if (!connectionString) return res.status(500).json({ error: "Lỗi: Chưa cấu hình Database URL" });
+    if (!connectionString) {
+        return res.status(500).json({ error: "Missing DATABASE_URL" });
+    }
 
     const sql = neon(connectionString);
 
     try {
-        const { index, product, isDelete } = req.body;
-        await sql`CREATE TABLE IF NOT EXISTS products (id SERIAL PRIMARY KEY, data JSONB NOT NULL)`;
-        const rows = await sql`SELECT id FROM products ORDER BY id ASC`;
+        const { id, product, action } = req.body;
 
-        if (index !== null && (index < 0 || !rows[index])) {
-            return res.status(400).json({ error: "Dữ liệu không đồng bộ. Vui lòng tải lại trang!" });
+        if (!action || !["create", "update", "delete"].includes(action)) {
+            return res.status(400).json({ error: "Invalid action" });
         }
 
-        if (isDelete && index !== null) {
-            await sql`DELETE FROM products WHERE id = ${rows[index].id}`;
-        } else if (index !== null) {
-            await sql`UPDATE products SET data = ${product} WHERE id = ${rows[index].id}`;
-        } else {
-            await sql`INSERT INTO products (data) VALUES (${product})`;
+        await sql`
+            CREATE TABLE IF NOT EXISTS products (
+                                                    id SERIAL PRIMARY KEY,
+                                                    data JSONB NOT NULL
+            )
+        `;
+
+        // ===== DELETE =====
+        if (action === "delete") {
+            if (!id) {
+                return res.status(400).json({ error: "Missing product id" });
+            }
+
+            await sql`DELETE FROM products WHERE id = ${id}`;
+            return res.status(200).json({ message: "Deleted", id });
         }
 
-        return res.status(200).json({ message: "Success" });
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ error: "Lỗi Database: " + error.message });
+        // ===== VALIDATE PRODUCT =====
+        if (!product || !product.name) {
+            return res.status(400).json({ error: "Invalid product data" });
+        }
+
+        const normalizedProduct = {
+            name: product.name || "",
+            price: product.price || 0,
+            category: product.category || "Khác",
+            desc: product.desc || "",
+            images: Array.isArray(product.images) ? product.images : []
+        };
+
+        // ===== UPDATE =====
+        if (action === "update") {
+            if (!id) {
+                return res.status(400).json({ error: "Missing product id" });
+            }
+
+            await sql`
+        UPDATE products
+        SET data = ${normalizedProduct}
+        WHERE id = ${id}
+      `;
+
+            return res.status(200).json({
+                message: "Updated",
+                id,
+                product: normalizedProduct
+            });
+        }
+
+        // ===== CREATE =====
+        const rows = await sql`
+      INSERT INTO products (data)
+      VALUES (${normalizedProduct})
+      RETURNING id
+    `;
+
+        return res.status(201).json({
+            message: "Created",
+            id: rows[0].id,
+            product: normalizedProduct
+        });
+
+    } catch (err) {
+        console.error("❌ save-product error:", err);
+        return res.status(500).json({ error: err.message });
     }
 };
