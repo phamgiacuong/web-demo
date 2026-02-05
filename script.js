@@ -78,5 +78,17 @@ function filterByCategory(cat, el) {
     el.classList.add('tab-active');
     renderProducts(cat === 'Tất cả' ? products : products.filter(p => p.category === cat));
 }
+/* ================= ADMIN BASIC ================= */
 
+const ADMIN_PASSWORD = "123";
+
+function accessAdmin() {
+    const pass = prompt("Nhập mật khẩu quản trị:");
+    if (pass === ADMIN_PASSWORD) {
+        alert("Admin mode (demo) 🚀\nBạn có thể mở modal quản lý ở đây.");
+        // TODO: mở admin modal nếu bạn muốn
+    } else {
+        alert("Sai mật khẩu!");
+    }
+}
 fetchProducts();
