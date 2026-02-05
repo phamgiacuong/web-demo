@@ -1,123 +1,163 @@
-/* ================= CONFIG ================= */
-const API_URL = "/api/get-products"
+let products = JSON.parse(localStorage.getItem('products')) || [];
+let uploadedImages = [];
+let editingIndex = null;
+let currentCategory = 'Tất cả';
+let keyword = '';
+let lastDeleted = null;
 
-let products = []
-let filteredProducts = []
+/* RENDER */
+function renderProducts(){
+    const list = document.getElementById('productList');
+    list.innerHTML='';
+    products
+        .filter(p=>p.status!=='deleted' && p.status!=='draft')
+        .filter(p=>currentCategory==='Tất cả'||p.category===currentCategory)
+        .filter(p=>p.name.toLowerCase().includes(keyword))
+        .forEach(p=>{
+            const d=document.createElement('div');
+            d.className='product-card';
+            d.onclick=()=>openProductModal(p);
+            d.innerHTML=`
+              <div class="product-img"><img src="${p.images?.[0]||''}"></div>
+              <div class="product-info">
+                <h3>${p.name}</h3>
+                <div class="price">${p.price}</div>
+              </div>`;
+            list.appendChild(d);
+        });
+}
 
-/* ================= LOAD PRODUCTS ================= */
-async function loadProducts() {
-    try {
-        const res = await fetch(API_URL)
-        const data = await res.json()
+function filterByCategory(cat,el){
+    document.querySelectorAll('.collection-bar button').forEach(b=>b.classList.remove('active'));
+    el.classList.add('active');
+    currentCategory=cat;
+    renderProducts();
+}
 
-        /**
-         * Giả định get-products.js trả về:
-         * [
-         *  {
-         *    name,
-         *    price,
-         *    category,
-         *    desc,
-         *    images: []
-         *  }
-         * ]
-         */
+function handleSearch(e){
+    keyword=e.target.value.toLowerCase();
+    renderProducts();
+}
 
-        products = data.map(p => ({
-            name: p.name,
-            price: formatPrice(p.price),
-            category: p.category || "Khác",
-            desc: p.desc || "",
-            images: p.images && p.images.length
-                ? p.images
-                : ["/no-image.png"]
-        }))
+/* MODAL */
+function openProductModal(p){
+    modalMainImg.src=p.images?.[0]||'';
+    modalName.innerText=p.name;
+    modalPrice.innerText=p.price;
+    modalDesc.innerText=p.desc||'';
+    modalThumbnails.innerHTML='';
+    (p.images||[]).forEach(src=>{
+        const i=document.createElement('img');
+        i.src=src;
+        i.onclick=()=>modalMainImg.src=src;
+        modalThumbnails.appendChild(i);
+    });
+    productModal.classList.remove('hidden');
+}
+function closeProductModal(){productModal.classList.add('hidden')}
 
-        filteredProducts = [...products]
-        renderProducts()
-
-    } catch (err) {
-        console.error("❌ Không load được sản phẩm", err)
+/* ADMIN */
+document.addEventListener('keydown',e=>{
+    if(e.ctrlKey&&e.shiftKey&&e.key==='A'){
+        if(!confirm('Mở admin?'))return;
+        adminModal.classList.toggle('hidden');
+        loadDraft();
+        renderAdminList();
     }
+});
+function closeAdmin(){adminModal.classList.add('hidden')}
+
+function renderAdminList(){
+    adminList.innerHTML='';
+    products.forEach((p,i)=>{
+        if(p.status==='deleted')return;
+        const d=document.createElement('div');
+        d.className='admin-item';
+        d.innerHTML=`
+          <img src="${p.images?.[0]||''}">
+          <div><b>${p.name}</b><br><small>${p.price}</small></div>
+          <div class="admin-actions">
+            <button onclick="editAdminProduct(${i})">✏</button>
+            <button onclick="previewProduct(${i})">👁</button>
+            <button class="delete" onclick="deleteAdminProduct(${i})">🗑</button>
+          </div>`;
+        adminList.appendChild(d);
+    });
 }
 
-/* ================= RENDER GRID ================= */
-function renderProducts() {
-    const list = document.getElementById("productList")
-    list.innerHTML = ""
-
-    filteredProducts.forEach((p, index) => {
-        list.innerHTML += `
-      <div class="product-card" onclick="openProduct(${index})">
-        <div class="product-img">
-          <img src="${p.images[0]}" loading="lazy">
-        </div>
-        <div class="product-info">
-          <h3>${p.name}</h3>
-          <div class="price">${p.price}</div>
-        </div>
-      </div>
-    `
-    })
+function saveAdminProduct(){
+    const p={
+        name:aName.value,
+        price:aPrice.value,
+        category:aCat.value,
+        desc:aDesc.value,
+        images:uploadedImages,
+        status:aStatus.value,
+        versions:[...(editingIndex!==null?products[editingIndex].versions||[]:[]),{time:Date.now()}]
+    };
+    editingIndex!==null?products[editingIndex]=p:products.push(p);
+    localStorage.setItem('products',JSON.stringify(products));
+    renderProducts();renderAdminList();
 }
 
-/* ================= MODAL ================= */
-function openProduct(index) {
-    const p = filteredProducts[index]
-
-    document.getElementById("modalMainImg").src = p.images[0]
-    document.getElementById("modalName").innerText = p.name
-    document.getElementById("modalPrice").innerText = p.price
-    document.getElementById("modalDesc").innerText = p.desc
-
-    const thumbs = document.getElementById("modalThumbnails")
-    thumbs.innerHTML = ""
-    p.images.forEach(img => {
-        thumbs.innerHTML += `
-      <img src="${img}" onclick="setMainImage('${img}')">
-    `
-    })
-
-    document.getElementById("productModal").classList.remove("hidden")
+function editAdminProduct(i){
+    const p=products[i];
+    editingIndex=i;
+    aName.value=p.name;
+    aPrice.value=p.price;
+    aCat.value=p.category;
+    aDesc.value=p.desc;
+    aStatus.value=p.status;
+    uploadedImages=[...(p.images||[])];
+    renderPreview();
 }
 
-function setMainImage(src) {
-    document.getElementById("modalMainImg").src = src
+function deleteAdminProduct(i){
+    lastDeleted={...products[i],index:i};
+    products[i].status='deleted';
+    localStorage.setItem('products',JSON.stringify(products));
+    renderProducts();renderAdminList();
+    undoToast.classList.remove('hidden');
 }
 
-function closeProductModal() {
-    document.getElementById("productModal").classList.add("hidden")
+function undoDelete(){
+    products[lastDeleted.index]=lastDeleted;
+    localStorage.setItem('products',JSON.stringify(products));
+    undoToast.classList.add('hidden');
+    renderProducts();renderAdminList();
 }
 
-/* ================= SEARCH ================= */
-function handleSearch(e) {
-    const value = e.target.value.toLowerCase()
-    filteredProducts = products.filter(p =>
-        p.name.toLowerCase().includes(value)
-    )
-    renderProducts()
+function previewProduct(i){openProductModal(products[i])}
+
+/* UPLOAD */
+aFile.onchange=()=>{
+    uploadedImages=[];
+    [...aFile.files].forEach(f=>{
+        const r=new FileReader();
+        r.onload=e=>{uploadedImages.push(e.target.result);renderPreview()};
+        r.readAsDataURL(f);
+    });
+}
+function renderPreview(){
+    imgPreview.innerHTML='';
+    uploadedImages.forEach(src=>{
+        const i=document.createElement('img');
+        i.src=src;i.draggable=true;
+        imgPreview.appendChild(i);
+    });
 }
 
-/* ================= CATEGORY ================= */
-function filterByCategory(cat, el) {
-    document.querySelectorAll(".cat")
-        .forEach(b => b.classList.remove("active"))
-    el.classList.add("active")
-
-    filteredProducts =
-        cat === "Tất cả"
-            ? products
-            : products.filter(p => p.category === cat)
-
-    renderProducts()
+/* DRAFT */
+function loadDraft(){
+    const d=JSON.parse(localStorage.getItem('adminDraft')||'{}');
+    aName.value=d.name||'';aPrice.value=d.price||'';aDesc.value=d.desc||'';
 }
+['aName','aPrice','aDesc'].forEach(id=>{
+    document.getElementById(id).oninput=()=>{
+        localStorage.setItem('adminDraft',JSON.stringify({
+            name:aName.value,price:aPrice.value,desc:aDesc.value
+        }));
+    }
+});
 
-/* ================= UTIL ================= */
-function formatPrice(v) {
-    if (!v) return ""
-    if (typeof v === "string") return v
-    return v.toLocaleString("vi-VN") + "đ"
-}
-
-/* ================= INIT ================= */
-loadProducts()
+renderProducts();

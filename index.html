@@ -3,25 +3,19 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Chuyên Hàng Nhật Nội Địa</title>
+    <title>Hàng Nhật Nội Địa</title>
 
-    <!-- Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-    <!-- CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<!-- ================= HEADER ================= -->
 <header class="site-header">
     <div class="header-inner">
-        <input
-                type="text"
-                placeholder="Tìm kiếm sản phẩm..."
-                oninput="handleSearch(event)"
-                class="search-input"/>
+        <input class="search-input"
+               placeholder="Tìm kiếm sản phẩm..."
+               oninput="handleSearch(event)"/>
 
         <div class="brand">
             <h1>Hàng Nhật <span>Nội Địa</span></h1>
@@ -29,7 +23,6 @@
         </div>
     </div>
 
-    <!-- CATEGORY -->
     <div class="collection-bar">
         <button class="active" onclick="filterByCategory('Tất cả', this)">Tất cả</button>
         <button onclick="filterByCategory('Thực phẩm chức năng', this)">TPCN</button>
@@ -39,22 +32,18 @@
     </div>
 </header>
 
-<!-- ================= PRODUCT LIST ================= -->
-<main id="productList" class="product-grid-wrapper">
-    <!-- JS render -->
-</main>
+<main id="productList" class="product-grid-wrapper"></main>
 
-<!-- ================= PRODUCT MODAL ================= -->
+<!-- PRODUCT MODAL -->
 <div id="productModal" class="modal hidden">
     <div class="modal-overlay" onclick="closeProductModal()"></div>
-
     <div class="modal-content">
         <button class="modal-close" onclick="closeProductModal()">×</button>
 
         <div class="shopify-product">
             <div class="sp-media">
                 <div class="sp-main">
-                    <img id="modalMainImg"/>
+                    <img id="modalMainImg">
                 </div>
                 <div id="modalThumbnails" class="sp-thumbs"></div>
             </div>
@@ -63,23 +52,47 @@
                 <h1 id="modalName"></h1>
                 <div id="modalPrice" class="sp-price"></div>
                 <p id="modalDesc" class="sp-desc"></p>
-
-                <button class="sp-cta">
-                    LIÊN HỆ ĐẶT HÀNG
-                </button>
+                <button class="sp-cta">LIÊN HỆ ĐẶT HÀNG</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- ================= LIGHTBOX ================= -->
-<div id="lightbox" class="lightbox hidden" onclick="closeLightbox()">
-    <img id="lightboxImg"/>
+<!-- ADMIN MODAL -->
+<div id="adminModal" class="admin-modal hidden">
+    <div class="admin-panel">
+        <button class="admin-close" onclick="closeAdmin()">×</button>
+        <h3 class="admin-title">Admin Products</h3>
+
+        <div id="adminList" class="admin-list"></div>
+
+        <select id="aStatus" class="admin-input">
+            <option value="published">Published</option>
+            <option value="draft">Draft</option>
+        </select>
+
+        <input id="aName" class="admin-input" placeholder="Tên sản phẩm">
+        <input id="aPrice" class="admin-input" placeholder="Giá">
+        <select id="aCat" class="admin-input">
+            <option>Thực phẩm chức năng</option>
+            <option>Quần áo</option>
+            <option>Bánh kẹo</option>
+            <option>Đồ uống</option>
+        </select>
+        <textarea id="aDesc" class="admin-input" placeholder="Mô tả"></textarea>
+
+        <input type="file" id="aFile" multiple class="admin-input">
+        <div id="imgPreview" class="img-preview"></div>
+
+        <button class="admin-btn save" onclick="saveAdminProduct()">💾 Lưu</button>
+        <button class="admin-btn add" onclick="addNewProduct()">➕ Thêm mới</button>
+    </div>
 </div>
 
-<!-- ================= MOBILE CTA ================= -->
-<div class="sticky-cta">
-    <button>LIÊN HỆ ĐẶT HÀNG</button>
+<!-- UNDO -->
+<div id="undoToast" class="undo-toast hidden">
+    Đã xoá sản phẩm
+    <button onclick="undoDelete()">Hoàn tác</button>
 </div>
 
 <script src="script.js"></script>
