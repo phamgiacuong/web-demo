@@ -66,3 +66,13 @@ body{margin:0;background:#fafafa;color:#111}
 /* UNDO */
 .undo-toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:10px 14px;border-radius:999px;display:flex;gap:10px;z-index:100}
 .undo-toast button{background:none;border:none;color:#0ea5e9;cursor:pointer}
+.sp-thumbs img {
+    opacity: 0.6;
+    border: 2px solid transparent;
+}
+
+.sp-thumbs img:hover,
+.sp-thumbs img.active {
+    opacity: 1;
+    border-color: #e11d48;
+}

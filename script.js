@@ -8,6 +8,8 @@ let editingIndex = null;
 let currentCategory = 'Tất cả';
 let keyword = '';
 let lastDeleted = null;
+let currentImageIndex = 0;
+let currentImages = [];
 
 /* ================== LOAD DATA ================== */
 async function loadProductsFromAPI() {
@@ -79,24 +81,46 @@ function handleSearch(e) {
 
 /* ================== PRODUCT MODAL ================== */
 function openProductModal(p) {
-    modalMainImg.src = p.images?.[0] || '';
+    currentImages = p.images || [];
+    currentImageIndex = 0;
+
+    modalMainImg.src = currentImages[0] || '';
     modalName.innerText = p.name;
     modalPrice.innerText = p.price;
     modalDesc.innerText = p.desc || '';
 
     modalThumbnails.innerHTML = '';
-    (p.images || []).forEach(src => {
+    currentImages.forEach((src, i) => {
         const img = document.createElement('img');
         img.src = src;
-        img.onclick = () => modalMainImg.src = src;
+        img.onclick = () => {
+            currentImageIndex = i;
+            modalMainImg.src = src;
+        };
         modalThumbnails.appendChild(img);
     });
 
     productModal.classList.remove('hidden');
 }
 
+document.addEventListener('keydown', e => {
+    if (productModal.classList.contains('hidden')) return;
+
+    if (e.key === 'ArrowRight') {
+        currentImageIndex = (currentImageIndex + 1) % currentImages.length;
+        modalMainImg.src = currentImages[currentImageIndex];
+    }
+
+    if (e.key === 'ArrowLeft') {
+        currentImageIndex =
+            (currentImageIndex - 1 + currentImages.length) % currentImages.length;
+        modalMainImg.src = currentImages[currentImageIndex];
+    }
+});
+
 function closeProductModal() {
     productModal.classList.add('hidden');
+    modalThumbnails.innerHTML = '';
 }
 
 /* ================== ADMIN SHORTCUT ================== */
@@ -111,7 +135,15 @@ document.addEventListener('keydown', e => {
 
 function closeAdmin() {
     adminModal.classList.add('hidden');
+    resetAdminForm();
 }
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        closeAdmin();
+        closeProductModal();
+    }
+});
 
 /* ================== ADMIN LIST ================== */
 function renderAdminList() {
@@ -141,30 +173,42 @@ function renderAdminList() {
 }
 
 /* ================== ADMIN CRUD ================== */
+function resetAdminForm() {
+    aName.value = '';
+    aPrice.value = '';
+    aCat.value = 'Thực phẩm chức năng';
+    aDesc.value = '';
+    aStatus.value = 'published';
+    aFile.value = '';
+    uploadedImages = [];
+    editingIndex = null;
+    imgPreview.innerHTML = '';
+}
+
 function saveAdminProduct() {
     const product = {
-        name: aName.value,
-        price: aPrice.value,
+        name: aName.value.trim(),
+        price: aPrice.value.trim(),
         category: aCat.value,
-        desc: aDesc.value,
+        desc: aDesc.value.trim(),
         images: uploadedImages,
-        status: aStatus.value,
-        versions: []
+        status: aStatus.value || 'published'
     };
 
+    if (!product.name || !product.price) {
+        alert('⚠️ Nhập tên và giá');
+        return;
+    }
+
     if (editingIndex !== null) {
-        product.versions = [
-            ...(products[editingIndex].versions || []),
-            { time: Date.now(), data: products[editingIndex] }
-        ];
         products[editingIndex] = product;
     } else {
         products.push(product);
     }
 
     localStorage.setItem('products', JSON.stringify(products));
-    editingIndex = null;
 
+    resetAdminForm();        // ✅ FIX CHÍNH
     renderProducts();
     renderAdminList();
 }
