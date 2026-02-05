@@ -53,24 +53,30 @@
 
 <div id="productModal" class="fixed inset-0 bg-black/50 hidden z-50 items-center justify-center p-4">
     <div class="bg-white max-w-5xl w-full flex flex-col md:flex-row relative rounded-lg overflow-hidden shadow-2xl">
-        <button onclick="document.getElementById('productModal').classList.replace('flex', 'hidden')" class="absolute top-4 right-4 text-2xl z-10">&times;</button>
+        <button onclick="document.getElementById('productModal').classList.replace('flex', 'hidden')" class="absolute top-4 right-4 text-2xl z-20 bg-white/80 rounded-full w-10 h-10 shadow">&times;</button>
 
-        <div class="md:w-3/5 p-4 flex flex-col md:flex-row gap-4 bg-gray-50">
+        <div class="md:w-3/5 p-4 flex flex-col md:flex-row gap-4 bg-gray-50 relative group">
             <div id="modalThumbnails" class="flex md:flex-col gap-2 order-2 md:order-1 overflow-x-auto md:w-20"></div>
-            <div class="flex-grow flex items-center justify-center bg-white rounded order-1 md:order-2 p-4">
-                <img id="modalMainImg" src="" class="max-h-[70vh] object-contain">
+
+            <div class="flex-grow flex items-center justify-center bg-white rounded order-1 md:order-2 p-4 relative overflow-hidden">
+                <button onclick="prevImage()" class="absolute left-2 top-1/2 -translate-y-1/2 bg-white/50 hover:bg-white p-2 rounded-full shadow z-10">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                </button>
+
+                <img id="modalMainImg" src="" class="max-h-[70vh] object-contain transition-all duration-300">
+
+                <button onclick="nextImage()" class="absolute right-2 top-1/2 -translate-y-1/2 bg-white/50 hover:bg-white p-2 rounded-full shadow z-10">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </button>
             </div>
         </div>
 
         <div class="md:w-2/5 p-8 flex flex-col justify-center">
-            <h2 id="modalName" class="text-3xl font-bold mb-4 text-gray-800 leading-tight"></h2>
-            <div class="flex items-baseline gap-2 mb-6">
-                <span class="text-gray-500 text-sm italic">Giá:</span>
-                <p id="modalPrice" class="text-3xl font-bold text-red-600"></p>
-            </div>
-            <div class="h-1 bg-red-600 w-16 mb-8"></div>
-            <p id="modalDesc" class="text-gray-600 text-sm leading-relaxed mb-10"></p>
-            <button class="bg-green-600 text-white py-4 rounded-full font-bold shadow-lg hover:bg-green-700 transition-all">MUA NGAY QUA ZALO</button>
+            <h2 id="modalName" class="text-2xl font-bold mb-4 text-gray-800 uppercase"></h2>
+            <p id="modalPrice" class="text-3xl font-bold text-red-600 mb-6"></p>
+            <div class="h-1 bg-red-600 w-16 mb-6"></div>
+            <p id="modalDesc" class="text-gray-600 text-sm leading-relaxed mb-8 whitespace-pre-line"></p>
+            <button class="bg-[#0068ff] text-white py-4 rounded font-bold shadow hover:opacity-90 transition-all">NHẮN TIN QUA ZALO</button>
         </div>
     </div>
 </div>
