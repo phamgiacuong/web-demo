@@ -1,7 +1,9 @@
 {
   "name": "hang-nhat-noi-dia",
   "version": "1.0.0",
+  "description": "Shop hang nhat noi dia dung Netlify Blobs",
+  "main": "index.html",
   "dependencies": {
-    "@netlify/blobs": "^0.2.0"
+    "@netlify/blobs": "latest"
   }
 }
