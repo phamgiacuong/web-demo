@@ -1,21 +1,27 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta charset="UTF-8" />
     <title>Hàng Nhật Nội Địa</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-<header class="site-header">
+<!-- ================= HEADER ================= -->
+<header class="header">
     <div class="header-inner">
-        <input class="search-input"
-               placeholder="Tìm kiếm sản phẩm..."
-               oninput="handleSearch(event)"/>
+        <input
+                type="text"
+                class="search"
+                placeholder="Tìm kiếm sản phẩm..."
+                oninput="handleSearch(event)"
+        />
 
         <div class="brand">
             <h1>Hàng Nhật <span>Nội Địa</span></h1>
@@ -23,7 +29,7 @@
         </div>
     </div>
 
-    <div class="collection-bar">
+    <div class="categories collection-bar">
         <button class="active" onclick="filterByCategory('Tất cả', this)">Tất cả</button>
         <button onclick="filterByCategory('Thực phẩm chức năng', this)">TPCN</button>
         <button onclick="filterByCategory('Quần áo', this)">Quần áo</button>
@@ -32,68 +38,88 @@
     </div>
 </header>
 
-<main id="productList" class="product-grid-wrapper"></main>
+<!-- ================= MAIN ================= -->
+<main class="container">
 
-<!-- PRODUCT MODAL -->
+    <!-- PRODUCT GRID -->
+    <section id="productList" class="product-grid">
+        <!-- JS render -->
+    </section>
+
+</main>
+
+<!-- ================= PRODUCT DETAIL MODAL ================= -->
 <div id="productModal" class="modal hidden">
     <div class="modal-overlay" onclick="closeProductModal()"></div>
-    <div class="modal-content">
+
+    <div class="modal-box">
         <button class="modal-close" onclick="closeProductModal()">×</button>
 
-        <div class="shopify-product">
-            <div class="sp-media">
-                <div class="sp-main">
-                    <img id="modalMainImg">
+        <div class="product-detail">
+            <!-- LEFT -->
+            <div class="pd-media">
+                <div class="pd-main">
+                    <img id="modalMainImg" />
                 </div>
-                <div id="modalThumbnails" class="sp-thumbs"></div>
+                <div id="modalThumbnails" class="pd-thumbs"></div>
             </div>
 
-            <div class="sp-info">
-                <h1 id="modalName"></h1>
-                <div id="modalPrice" class="sp-price"></div>
-                <p id="modalDesc" class="sp-desc"></p>
-                <button class="sp-cta">LIÊN HỆ ĐẶT HÀNG</button>
+            <!-- RIGHT -->
+            <div class="pd-info">
+                <h2 id="modalName"></h2>
+                <div id="modalPrice" class="pd-price"></div>
+                <p id="modalDesc" class="pd-desc"></p>
+
+                <button class="cta">
+                    LIÊN HỆ ĐẶT HÀNG
+                </button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- ADMIN MODAL -->
-<div id="adminModal" class="admin-modal hidden">
-    <div class="admin-panel">
-        <button class="admin-close" onclick="closeAdmin()">×</button>
-        <div class="admin-overlay" onclick="closeAdmin()"></div>
-        <h3 class="admin-title">Admin Products</h3>
+<!-- ================= ADMIN PANEL ================= -->
+<div id="adminModal" class="admin hidden">
+    <div class="admin-inner">
 
-        <div id="adminList" class="admin-list"></div>
+        <!-- LEFT: LIST -->
+        <aside class="admin-list">
+            <h3>Sản phẩm</h3>
+            <div id="adminList"></div>
+        </aside>
 
-        <select id="aStatus" class="admin-input">
-            <option value="published">Published</option>
-            <option value="draft">Draft</option>
-        </select>
+        <!-- RIGHT: EDIT -->
+        <section class="admin-editor">
+            <h3>Chỉnh sửa</h3>
 
-        <input id="aName" class="admin-input" placeholder="Tên sản phẩm">
-        <input id="aPrice" class="admin-input" placeholder="Giá">
-        <select id="aCat" class="admin-input">
-            <option>Thực phẩm chức năng</option>
-            <option>Quần áo</option>
-            <option>Bánh kẹo</option>
-            <option>Đồ uống</option>
-        </select>
-        <textarea id="aDesc" class="admin-input" placeholder="Mô tả"></textarea>
+            <label>Tên sản phẩm</label>
+            <input id="aName">
 
-        <input type="file" id="aFile" multiple class="admin-input">
-        <div id="imgPreview" class="img-preview"></div>
+            <label>Giá</label>
+            <input id="aPrice">
 
-        <button class="admin-btn save" onclick="saveAdminProduct()">💾 Lưu</button>
-        <button class="admin-btn add" onclick="addNewProduct()">➕ Thêm mới</button>
+            <label>Danh mục</label>
+            <select id="aCat">
+                <option>Thực phẩm chức năng</option>
+                <option>Quần áo</option>
+                <option>Bánh kẹo</option>
+                <option>Đồ uống</option>
+            </select>
+
+            <label>Mô tả</label>
+            <textarea id="aDesc"></textarea>
+
+            <label>Hình ảnh</label>
+            <input type="file" id="aFile" multiple accept="image/*">
+            <div id="imgPreview" class="img-preview"></div>
+
+            <div class="admin-actions">
+                <button class="btn primary" onclick="saveAdminProduct()">Lưu</button>
+                <button class="btn ghost" onclick="closeAdmin()">Huỷ</button>
+            </div>
+        </section>
+
     </div>
-</div>
-
-<!-- UNDO -->
-<div id="undoToast" class="undo-toast hidden">
-    Đã xoá sản phẩm
-    <button onclick="undoDelete()">Hoàn tác</button>
 </div>
 
 <script src="script.js"></script>

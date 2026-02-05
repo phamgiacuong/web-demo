@@ -1,297 +1,216 @@
-/* ================== CONFIG ================== */
-const API_URL = '/api/get-products'; // 🔴 đổi nếu API bạn khác
+/* ===================== CONFIG ===================== */
+const API_GET = "/api/get-products";
+const API_SAVE = "/api/save-product";
 
-/* ================== STATE ================== */
+/* ===================== STATE ===================== */
 let products = [];
-let uploadedImages = [];
-let editingIndex = null;
-let currentCategory = 'Tất cả';
-let keyword = '';
-let lastDeleted = null;
-let currentImageIndex = 0;
-let currentImages = [];
+let currentCategory = "Tất cả";
+let editingProduct = null;
 
-/* ================== LOAD DATA ================== */
-async function loadProductsFromAPI() {
+/* ===================== LOAD ===================== */
+document.addEventListener("DOMContentLoaded", loadProducts);
+
+async function loadProducts() {
     try {
-        const res = await fetch(API_URL);
-        const apiProducts = await res.json();
-
-        // Nếu chưa có localStorage → dùng API làm nguồn gốc
-        if (!localStorage.getItem('products')) {
-            products = apiProducts.map(p => ({
-                ...p,
-                status: p.status || 'published',
-                versions: []
-            }));
-            localStorage.setItem('products', JSON.stringify(products));
-        } else {
-            products = JSON.parse(localStorage.getItem('products'));
-        }
-
+        const res = await fetch(API_GET);
+        products = await res.json();
         renderProducts();
         renderAdminList();
     } catch (e) {
-        console.error('❌ Không load được API get-product', e);
+        console.error("Không load được sản phẩm", e);
     }
 }
 
-/* ================== RENDER USER ================== */
+/* ===================== RENDER GRID ===================== */
 function renderProducts() {
-    const list = document.getElementById('productList');
-    list.innerHTML = '';
+    const el = document.getElementById("productList");
+    el.innerHTML = "";
 
-    products
-        .filter(p => p.status !== 'deleted' && p.status !== 'draft')
-        .filter(p => currentCategory === 'Tất cả' || p.category === currentCategory)
-        .filter(p => p.name.toLowerCase().includes(keyword))
-        .forEach(p => {
-            const div = document.createElement('div');
-            div.className = 'product-card';
-            div.onclick = () => openProductModal(p);
+    const filtered = products.filter(p =>
+        currentCategory === "Tất cả" || p.category === currentCategory
+    );
 
-            div.innerHTML = `
-                <div class="product-img">
-                    <img src="${p.images?.[0] || ''}">
-                </div>
-                <div class="product-info">
-                    <h3>${p.name}</h3>
-                    <div class="price">${p.price}</div>
-                </div>
-            `;
-            list.appendChild(div);
-        });
-}
-
-/* ================== FILTER ================== */
-function filterByCategory(category, el) {
-    document
-        .querySelectorAll('.collection-bar button')
-        .forEach(btn => btn.classList.remove('active'));
-
-    el.classList.add('active');
-    currentCategory = category;
-    renderProducts();
-}
-
-function handleSearch(e) {
-    keyword = e.target.value.toLowerCase();
-    renderProducts();
-}
-
-/* ================== PRODUCT MODAL ================== */
-function openProductModal(p) {
-    currentImages = p.images || [];
-    currentImageIndex = 0;
-
-    modalMainImg.src = currentImages[0] || '';
-    modalName.innerText = p.name;
-    modalPrice.innerText = p.price;
-    modalDesc.innerText = p.desc || '';
-
-    modalThumbnails.innerHTML = '';
-    currentImages.forEach((src, i) => {
-        const img = document.createElement('img');
-        img.src = src;
-        img.onclick = () => {
-            currentImageIndex = i;
-            modalMainImg.src = src;
-        };
-        modalThumbnails.appendChild(img);
+    filtered.forEach(p => {
+        el.innerHTML += `
+        <div class="product-card" onclick="openProduct(${p.id})">
+            <div class="product-img">
+                <img src="${p.images?.[0] || ''}">
+            </div>
+            <div class="product-info">
+                <h3>${p.name}</h3>
+                <div class="price">${formatPrice(p.price)}</div>
+            </div>
+        </div>
+        `;
     });
-
-    productModal.classList.remove('hidden');
 }
 
-document.addEventListener('keydown', e => {
-    if (productModal.classList.contains('hidden')) return;
+/* ===================== SEARCH / FILTER ===================== */
+function handleSearch(e) {
+    const key = e.target.value.toLowerCase();
+    document.querySelectorAll(".product-card").forEach(card => {
+        card.style.display =
+            card.innerText.toLowerCase().includes(key) ? "" : "none";
+    });
+}
 
-    if (e.key === 'ArrowRight') {
-        currentImageIndex = (currentImageIndex + 1) % currentImages.length;
-        modalMainImg.src = currentImages[currentImageIndex];
+function filterByCategory(cat, btn) {
+    currentCategory = cat;
+    document.querySelectorAll(".categories button")
+        .forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    renderProducts();
+}
+
+/* ===================== PRODUCT MODAL ===================== */
+function openProduct(id) {
+    const p = products.find(x => x.id === id);
+    if (!p) return;
+
+    document.getElementById("modalName").innerText = p.name;
+    document.getElementById("modalPrice").innerText = formatPrice(p.price);
+    document.getElementById("modalDesc").innerText = p.description || "";
+
+    const main = document.getElementById("modalMainImg");
+    const thumbs = document.getElementById("modalThumbnails");
+    thumbs.innerHTML = "";
+
+    if (p.images?.length) {
+        main.src = p.images[0];
+        p.images.forEach(img => {
+            const t = document.createElement("img");
+            t.src = img;
+            t.onclick = () => main.src = img;
+            thumbs.appendChild(t);
+        });
     }
 
-    if (e.key === 'ArrowLeft') {
-        currentImageIndex =
-            (currentImageIndex - 1 + currentImages.length) % currentImages.length;
-        modalMainImg.src = currentImages[currentImageIndex];
-    }
-});
+    document.getElementById("productModal").classList.remove("hidden");
+}
 
 function closeProductModal() {
-    productModal.classList.add('hidden');
-    modalThumbnails.innerHTML = '';
+    document.getElementById("productModal").classList.add("hidden");
 }
 
-/* ================== ADMIN SHORTCUT ================== */
-document.addEventListener('keydown', e => {
-    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'a') {
-        if (!confirm('Mở chế độ quản trị?')) return;
-        adminModal.classList.toggle('hidden');
-        loadDraft();
-        renderAdminList();
-    }
-});
+/* ===================== ADMIN ===================== */
+function openAdmin() {
+    document.getElementById("adminModal").classList.remove("hidden");
+    clearAdminForm();
+}
 
 function closeAdmin() {
-    adminModal.classList.add('hidden');
-    resetAdminForm();
+    document.getElementById("adminModal").classList.add("hidden");
 }
 
-document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-        closeAdmin();
-        closeProductModal();
-    }
-});
-
-/* ================== ADMIN LIST ================== */
+/* ===== ADMIN LIST ===== */
 function renderAdminList() {
-    adminList.innerHTML = '';
+    const el = document.getElementById("adminList");
+    if (!el) return;
 
-    products.forEach((p, index) => {
-        if (p.status === 'deleted') return;
-
-        const div = document.createElement('div');
-        div.className = 'admin-item';
-
-        div.innerHTML = `
+    el.innerHTML = "";
+    products.forEach(p => {
+        el.innerHTML += `
+        <div class="admin-item">
             <img src="${p.images?.[0] || ''}">
-            <div>
-                <b>${p.name}</b><br>
-                <small>${p.price}</small>
+            <div class="info">
+                <b>${p.name}</b>
+                <small>${formatPrice(p.price)}</small>
             </div>
-            <div class="admin-actions">
-                <button onclick="editAdminProduct(${index})">✏</button>
-                <button onclick="previewProduct(${index})">👁</button>
-                <button class="delete" onclick="deleteAdminProduct(${index})">🗑</button>
+            <div class="actions">
+                <button onclick="editProduct(${p.id})">✏️</button>
+                <button onclick="deleteProduct(${p.id})">🗑️</button>
             </div>
+        </div>
         `;
-
-        adminList.appendChild(div);
     });
 }
 
-/* ================== ADMIN CRUD ================== */
-function resetAdminForm() {
-    aName.value = '';
-    aPrice.value = '';
-    aCat.value = 'Thực phẩm chức năng';
-    aDesc.value = '';
-    aStatus.value = 'published';
-    aFile.value = '';
-    uploadedImages = [];
-    editingIndex = null;
-    imgPreview.innerHTML = '';
-}
+/* ===== EDIT ===== */
+function editProduct(id) {
+    const p = products.find remember x => x.id === id);
+    if (!p) return;
 
-function saveAdminProduct() {
-    const product = {
-        name: aName.value.trim(),
-        price: aPrice.value.trim(),
-        category: aCat.value,
-        desc: aDesc.value.trim(),
-        images: uploadedImages,
-        status: aStatus.value || 'published'
-    };
-
-    if (!product.name || !product.price) {
-        alert('⚠️ Nhập tên và giá');
-        return;
-    }
-
-    if (editingIndex !== null) {
-        products[editingIndex] = product;
-    } else {
-        products.push(product);
-    }
-
-    localStorage.setItem('products', JSON.stringify(products));
-
-    resetAdminForm();        // ✅ FIX CHÍNH
-    renderProducts();
-    renderAdminList();
-}
-
-function editAdminProduct(index) {
-    const p = products[index];
-    editingIndex = index;
+    editingProduct = p;
+    openAdmin();
 
     aName.value = p.name;
     aPrice.value = p.price;
     aCat.value = p.category;
-    aDesc.value = p.desc;
-    aStatus.value = p.status;
+    aDesc.value = p.description || "";
 
-    uploadedImages = [...(p.images || [])];
-    renderPreview();
+    renderImagePreview(p.images || []);
 }
 
-function deleteAdminProduct(index) {
-    lastDeleted = { ...products[index], index };
-    products[index].status = 'deleted';
+/* ===== DELETE ===== */
+async function deleteProduct(id) {
+    if (!confirm("Xoá sản phẩm?")) return;
 
-    localStorage.setItem('products', JSON.stringify(products));
-    undoToast.classList.remove('hidden');
-
-    renderProducts();
-    renderAdminList();
+    products = products.filter(p => p.id !== id);
+    await saveAll();
 }
 
-function undoDelete() {
-    if (!lastDeleted) return;
-    products[lastDeleted.index] = lastDeleted;
-
-    localStorage.setItem('products', JSON.stringify(products));
-    undoToast.classList.add('hidden');
-
-    renderProducts();
-    renderAdminList();
-}
-
-function previewProduct(index) {
-    openProductModal(products[index]);
-}
-
-/* ================== IMAGE UPLOAD ================== */
-aFile.onchange = () => {
-    uploadedImages = [];
-    [...aFile.files].forEach(file => {
-        const reader = new FileReader();
-        reader.onload = e => {
-            uploadedImages.push(e.target.result);
-            renderPreview();
-        };
-        reader.readAsDataURL(file);
-    });
-};
-
-function renderPreview() {
-    imgPreview.innerHTML = '';
-    uploadedImages.forEach(src => {
-        const img = document.createElement('img');
-        img.src = src;
-        imgPreview.appendChild(img);
-    });
-}
-
-/* ================== DRAFT AUTO SAVE ================== */
-function loadDraft() {
-    const d = JSON.parse(localStorage.getItem('adminDraft') || '{}');
-    aName.value = d.name || '';
-    aPrice.value = d.price || '';
-    aDesc.value = d.desc || '';
-}
-
-['aName', 'aPrice', 'aDesc'].forEach(id => {
-    document.getElementById(id).oninput = () => {
-        localStorage.setItem('adminDraft', JSON.stringify({
-            name: aName.value,
-            price: aPrice.value,
-            desc: aDesc.value
-        }));
+/* ===== SAVE ===== */
+async function saveAdminProduct() {
+    const data = {
+        id: editingProduct?.id || Date.now(),
+        name: aName.value,
+        price: aPrice.value,
+        category: aCat.value,
+        description: aDesc.value,
+        images: await readImages()
     };
-});
 
-/* ================== INIT ================== */
-loadProductsFromAPI();
+    if (editingProduct) {
+        const i = products.findIndex(p => p.id === editingProduct.id);
+        products[i] = data;
+    } else {
+        products.unshift(data);
+    }
+
+    await saveAll();
+    closeAdmin();
+}
+
+async function saveAll() {
+    await fetch(API_SAVE, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(products)
+    });
+    editingProduct = null;
+    renderProducts();
+    renderAdminList();
+}
+
+/* ===================== IMAGE ===================== */
+function renderImagePreview(images) {
+    imgPreview.innerHTML = "";
+    images.forEach(img => {
+        const i = document.createElement("img");
+        i.src = img;
+        imgPreview.appendChild(i);
+    });
+}
+
+function readImages() {
+    return new Promise(resolve => {
+        if (!aFile.files.length) {
+            resolve(editingProduct?.images || []);
+            return;
+        }
+
+        const files = Array.from(aFile.files);
+        Promise.all(files.map(f => {
+            return new Promise(r => {
+                const fr = new FileReader();
+                fr.onload = () => r(fr.result);
+                fr.readAsDataURL(f);
+            });
+        })).then(resolve);
+    });
+}
+
+/* ===================== UTIL ===================== */
+function formatPrice(p) {
+    return Number(p).toLocaleString("vi-VN") + " ₫";
+}
