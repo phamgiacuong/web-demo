@@ -1,7 +1,7 @@
 const { neon } = require('@neondatabase/serverless');
 
 exports.handler = async (event) => {
-    const sql = neon();
+    const sql = neon(process.env.NETLIFY_DATABASE_URL);
     try {
         const { index, product } = JSON.parse(event.body);
 
