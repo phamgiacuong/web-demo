@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 import ProductCard from './ProductCard';
 import FadeIn from './FadeIn';
 import { Sparkles, Shirt, Pill, UtensilsCrossed, LayoutGrid, PackageOpen } from 'lucide-react';
@@ -16,7 +16,7 @@ const tabs = [
 ];
 
 // Animation variants cho container
-const containerVariants = {
+const containerVariants: Variants = {
     hidden: { opacity: 0 },
     show: {
         opacity: 1,
@@ -27,9 +27,16 @@ const containerVariants = {
 };
 
 // Animation variants cho từng item
-const itemVariants = {
+const itemVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 50 } }
+    show: {
+        opacity: 1,
+        y: 0,
+        transition: {
+            type: "spring",
+            stiffness: 50
+        }
+    }
 };
 
 export default function ProductShowcase({ products }: { products: any[] }) {
