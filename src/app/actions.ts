@@ -1,99 +1,106 @@
 // src/app/actions.ts
 'use server'
 
-import { PrismaClient } from '@prisma/client'
-import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
-import { cookies } from 'next/headers' // <--- QUAN TRỌNG: Phải có dòng này mới build được
-
-const prisma = new PrismaClient()
+import { prisma } from '../lib/prisma';
+import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 
 // --- 1. HÀM ĐĂNG NHẬP ---
 export async function login(formData: FormData) {
   const password = formData.get('password') as string;
-  
-  // MẬT KHẨU: admin123
+
   if (password === 'admin123') {
-    const cookieStore = await cookies() // Hàm này cần import ở dòng 6
-    cookieStore.set('auth', 'true', { maxAge: 86400 });
+    const cookieStore = await cookies();
+    cookieStore.set('auth', 'true', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24,
+      path: '/',
+    });
     redirect('/admin');
   } else {
     redirect('/login?error=true');
   }
 }
 
-// --- 2. HÀM XÓA SẢN PHẨM ---
-export async function deleteProduct(id: string) {
-  await prisma.product.delete({ where: { id } });
-  revalidatePath('/');
-  revalidatePath('/admin');
+// --- 2. HÀM ĐĂNG XUẤT ---
+export async function logout() {
+  const cookieStore = await cookies();
+  cookieStore.delete('auth');
+  redirect('/login');
 }
 
-// --- 3. HÀM UPDATE SẢN PHẨM ---
-export async function updateProduct(id: string, formData: FormData) {
-  const name = formData.get('name') as string
-  const description = formData.get('description') as string
-  const category = formData.get('category') as string
-  
-  const priceRaw = formData.get('price') as string;
-  const price = parseFloat(priceRaw.replace(/\./g, '').replace(/,/g, ''));
+// --- 3. LẤY DANH SÁCH SẢN PHẨM ---
+export async function getProducts(query: string, category: string) {
+  return await prisma.product.findMany({
+    where: {
+      AND: [
+        { name: { contains: query, mode: 'insensitive' } },
+        category ? { category: category } : {},
+      ],
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+}
 
-  const imagesRaw = formData.get('images') as string;
-  
-  const data: any = {
+// --- 4. LẤY CHI TIẾT 1 SẢN PHẨM ---
+export async function getProductById(id: string) {
+  return await prisma.product.findUnique({
+    where: { id },
+  });
+}
+
+// --- 5. XÓA SẢN PHẨM ---
+export async function deleteProduct(id: string) {
+  await prisma.product.delete({ where: { id } });
+  revalidatePath('/admin');
+  revalidatePath('/');
+}
+
+// --- 6. THÊM SẢN PHẨM MỚI ---
+export async function addProduct(formData: FormData) {
+  const name = formData.get('name') as string;
+  const price = formData.get('price') as string;
+  const description = formData.get('description') as string;
+  const category = formData.get('category') as string;
+  const image = formData.get('image') as string;
+
+  await prisma.product.create({
+    data: {
       name,
+      price: parseFloat(price),
       description,
-      price,
       category,
-  }
+      images: [image],
+    },
+  });
 
-  if (imagesRaw && imagesRaw.length > 0) {
-      data.images = imagesRaw.split('|||');
-  }
+  revalidatePath('/admin');
+  revalidatePath('/');
+  redirect('/admin');
+}
+
+// --- 7. CẬP NHẬT SẢN PHẨM (MỚI THÊM) ---
+export async function updateProduct(id: string, formData: FormData) {
+  const name = formData.get('name') as string;
+  const price = formData.get('price') as string;
+  const description = formData.get('description') as string;
+  const category = formData.get('category') as string;
+  const image = formData.get('image') as string;
 
   await prisma.product.update({
     where: { id },
-    data: data
-  })
+    data: {
+      name,
+      price: parseFloat(price),
+      description,
+      category,
+      images: [image],
+    },
+  });
 
-  revalidatePath('/')
-  redirect('/admin')
-}
-
-// --- 4. HÀM THÊM SẢN PHẨM ---
-export async function addProduct(formData: FormData) {
-  const name = formData.get('name') as string
-  const description = formData.get('description') as string
-  const category = formData.get('category') as string
-  
-  const priceRaw = formData.get('price') as string;
-  const price = parseFloat(priceRaw.replace(/\./g, '').replace(/,/g, ''));
-  
-  const imagesRaw = formData.get('images') as string;
-  const imageUrls = imagesRaw ? imagesRaw.split('|||') : [];
-
-  await prisma.product.create({
-    data: { name, description, price, category, images: imageUrls },
-  })
-  
-  revalidatePath('/')
-  redirect('/admin')
-}
-
-// --- 5. HÀM LẤY DANH SÁCH SẢN PHẨM ---
-export async function getProducts(query: string, category: string) {
-    return await prisma.product.findMany({
-      where: {
-        AND: [
-          { name: { contains: query, mode: 'insensitive' } },
-          category ? { category: { equals: category } } : {},
-        ],
-      },
-      orderBy: { createdAt: 'desc' }
-    })
-}
-
-// --- 6. HÀM LẤY CHI TIẾT SẢN PHẨM ---
-export async function getProductById(id: string) {
-    return await prisma.product.findUnique({ where: { id } })
+  revalidatePath('/admin');
+  revalidatePath('/');
+  redirect('/admin');
 }

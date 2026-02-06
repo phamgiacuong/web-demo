@@ -18,8 +18,7 @@ export default function LoginPage() {
             <label className="block text-sm font-medium text-gray-700">Mật khẩu</label>
             <input 
               type="password" 
-              name="password" 
-              placeholder="Nhập: admin123"
+              name="password"
               className="mt-1 w-full border p-2 rounded-md outline-none focus:ring-2 focus:ring-blue-500"
               required 
             />

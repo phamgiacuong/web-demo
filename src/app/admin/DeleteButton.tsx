@@ -1,24 +1,41 @@
 // src/app/admin/DeleteButton.tsx
-'use client'; // <--- Bắt buộc phải có dòng này để dùng được onClick và confirm
+'use client';
 
+import { deleteProduct } from '../actions';
 import { Trash2 } from 'lucide-react';
-import { deleteProduct } from '../actions'; // Import hành động xóa từ server
+import toast from 'react-hot-toast';
+import { useTransition } from 'react';
 
 export default function DeleteButton({ id }: { id: string }) {
-  const handleDelete = async () => {
-    // Hiện popup xác nhận của trình duyệt
-    if (window.confirm('Bạn có chắc chắn muốn xóa sản phẩm này không?')) {
-      await deleteProduct(id);
+  const [isPending, startTransition] = useTransition();
+
+  const handleDelete = () => {
+    // 1. Hỏi xác nhận
+    if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này không? Hành động này không thể hoàn tác.')) {
+
+      // 2. Hiển thị thông báo đang xử lý
+      const toastId = toast.loading('Đang xóa sản phẩm...');
+
+      // 3. Gọi Server Action để xóa
+      startTransition(async () => {
+        try {
+          await deleteProduct(id);
+          toast.success('Đã xóa sản phẩm thành công!', { id: toastId });
+        } catch (error) {
+          toast.error('Có lỗi xảy ra khi xóa.', { id: toastId });
+        }
+      });
     }
   };
 
   return (
-    <button 
-      onClick={handleDelete} // Dùng onClick chuẩn của React
-      className="p-2 text-red-600 hover:bg-red-50 rounded transition cursor-pointer"
-      title="Xóa sản phẩm"
-    >
-      <Trash2 className="w-5 h-5" />
-    </button>
+      <button
+          onClick={handleDelete}
+          disabled={isPending}
+          className="p-2 border border-gray-200 rounded-lg hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed group"
+          title="Xóa sản phẩm"
+      >
+        <Trash2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
+      </button>
   );
 }
