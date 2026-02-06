@@ -102,10 +102,10 @@ export default function Hero() {
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gray-100 rounded-full -z-10"></div>
 
                         {/* Ảnh chính: Bạn thay link ảnh sản phẩm đẹp vào đây */}
-                        {/* Ví dụ: Một bộ ấm trà Nhật, hoặc một set mỹ phẩm cao cấp */}
+                        {/* Đã cập nhật đường dẫn ảnh local */}
                         <img
-                            src="https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?q=80&w=1000&auto=format&fit=crop"
-                            alt="Tinh hoa Nhật Bản"
+                            src="/images/banner/hero-main.jpg"
+                            alt="Sản phẩm Nhật Bản cao cấp"
                             className="w-full h-auto object-cover rounded-[3rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] relative z-10"
                         />
 
@@ -113,15 +113,15 @@ export default function Hero() {
                         <motion.img
                             animate={{ y: [0, -20, 0] }}
                             transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                            src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=300&auto=format&fit=crop"
-                            alt=""
+                            src="/images/banner/hero-sub1.jpg"
+                            alt="Sản phẩm phụ 1"
                             className="absolute -bottom-10 -left-10 w-40 h-40 object-cover rounded-2xl shadow-xl border-4 border-white z-20"
                         />
                         <motion.img
                             animate={{ y: [0, 15, 0] }}
                             transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                            src="https://plus.unsplash.com/premium_photo-1661775434014-9c0e8d71de03?q=80&w=300&auto=format&fit=crop"
-                            alt=""
+                            src="/images/banner/hero-sub2.jpg"
+                            alt="Sản phẩm phụ 2"
                             className="absolute -top-10 -right-10 w-32 h-32 object-cover rounded-full shadow-lg border-4 border-white z-0"
                         />
                     </motion.div>

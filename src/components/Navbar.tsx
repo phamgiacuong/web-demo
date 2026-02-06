@@ -47,8 +47,8 @@ export default function Navbar() {
             <Link href="/" className="flex items-center gap-2 group z-50">
               <div className="w-9 h-9 md:w-10 md:h-10 bg-red-600 rounded-full flex items-center justify-center text-white font-black text-lg shadow-lg group-hover:scale-110 transition">JP</div>
               <div className="flex flex-col">
-                <span className="font-black text-lg md:text-xl tracking-tighter leading-none text-gray-900">JAPAN<span className="text-red-600">STORE</span></span>
-                <span className="text-[9px] md:text-[10px] font-bold text-gray-400 tracking-widest uppercase">Authentic</span>
+                <span className="font-black text-lg md:text-xl tracking-tighter leading-none text-gray-900">Hàng nhật nội địa</span>
+                {/*<span className="text-[9px] md:text-[10px] font-bold text-gray-400 tracking-widest uppercase">Authentic</span>*/}
               </div>
             </Link>
 

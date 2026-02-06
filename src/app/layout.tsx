@@ -11,7 +11,7 @@ import NameModal from '../components/NameModal';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
-    title: 'Japan Store - Hàng Nhật Nội Địa',
+    title: 'Hàng Nhật Nội Địa',
     description: 'Chuyên cung cấp thực phẩm chức năng, mỹ phẩm Nhật Bản chính hãng.',
 };
 
