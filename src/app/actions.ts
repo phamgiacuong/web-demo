@@ -9,7 +9,7 @@ import { cookies } from 'next/headers';
 // --- AUTH (Giữ nguyên) ---
 export async function login(formData: FormData) {
   const password = formData.get('password') as string;
-  if (password === '123') {
+  if (password === 'admin123') {
     const cookieStore = await cookies();
     cookieStore.set('auth', 'true', {
       httpOnly: true,
