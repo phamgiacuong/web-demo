@@ -27,3 +27,31 @@ body {
 html {
   scroll-behavior: smooth;
 }
+/* src/app/globals.css */
+
+/* ... code cũ giữ nguyên ... */
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db; /* Màu xám nhẹ */
+  border-radius: 10px;
+  border: 2px solid #f1f1f1; /* Tạo khoảng trắng quanh thanh cuộn */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af; /* Đậm hơn khi hover */
+}
+
+/* Hiệu ứng chọn văn bản màu đỏ thương hiệu */
+::selection {
+  background-color: #fee2e2; /* Red 100 */
+  color: #991b1b; /* Red 800 */
+}

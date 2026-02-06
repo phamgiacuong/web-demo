@@ -17,4 +17,24 @@ model Product {
   images      String[] // Mảng chứa các đường dẫn ảnh
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  orderItems  OrderItem[]
+}
+
+model Order {
+  id           String      @id @default(cuid())
+  customerName String      // Tên khách hàng
+  status       String      @default("pending") // pending (chờ), confirmed (đã xong)
+  total        Decimal     // Tổng tiền
+  items        OrderItem[]
+  createdAt    DateTime    @default(now())
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Decimal // Giá tại thời điểm mua
 }

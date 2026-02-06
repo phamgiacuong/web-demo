@@ -6,11 +6,10 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 
-// --- 1. HÀM ĐĂNG NHẬP ---
+// --- AUTH & PRODUCTS ---
 export async function login(formData: FormData) {
   const password = formData.get('password') as string;
-
-  if (password === 'admin123') {
+  if (password === '123') {
     const cookieStore = await cookies();
     cookieStore.set('auth', 'true', {
       httpOnly: true,
@@ -24,14 +23,12 @@ export async function login(formData: FormData) {
   }
 }
 
-// --- 2. HÀM ĐĂNG XUẤT ---
 export async function logout() {
   const cookieStore = await cookies();
   cookieStore.delete('auth');
   redirect('/login');
 }
 
-// --- 3. LẤY DANH SÁCH SẢN PHẨM ---
 export async function getProducts(query: string, category: string) {
   return await prisma.product.findMany({
     where: {
@@ -44,21 +41,16 @@ export async function getProducts(query: string, category: string) {
   });
 }
 
-// --- 4. LẤY CHI TIẾT 1 SẢN PHẨM ---
 export async function getProductById(id: string) {
-  return await prisma.product.findUnique({
-    where: { id },
-  });
+  return await prisma.product.findUnique({ where: { id } });
 }
 
-// --- 5. XÓA SẢN PHẨM ---
 export async function deleteProduct(id: string) {
   await prisma.product.delete({ where: { id } });
   revalidatePath('/admin');
   revalidatePath('/');
 }
 
-// --- 6. THÊM SẢN PHẨM MỚI ---
 export async function addProduct(formData: FormData) {
   const name = formData.get('name') as string;
   const price = formData.get('price') as string;
@@ -75,13 +67,11 @@ export async function addProduct(formData: FormData) {
       images: [image],
     },
   });
-
   revalidatePath('/admin');
   revalidatePath('/');
   redirect('/admin');
 }
 
-// --- 7. CẬP NHẬT SẢN PHẨM (MỚI THÊM) ---
 export async function updateProduct(id: string, formData: FormData) {
   const name = formData.get('name') as string;
   const price = formData.get('price') as string;
@@ -99,8 +89,46 @@ export async function updateProduct(id: string, formData: FormData) {
       images: [image],
     },
   });
-
   revalidatePath('/admin');
   revalidatePath('/');
   redirect('/admin');
+}
+
+// --- ORDER ACTIONS (MỚI) ---
+
+export async function createOrder(customerName: string, cartItems: any[], total: number) {
+  await prisma.order.create({
+    data: {
+      customerName,
+      total: total,
+      items: {
+        create: cartItems.map((item) => ({
+          productId: item.id,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+      },
+    },
+  });
+  revalidatePath('/admin/orders');
+}
+
+export async function getOrders() {
+  return await prisma.order.findMany({
+    orderBy: { createdAt: 'desc' },
+    include: {
+      items: {
+        include: { product: true }
+      }
+    }
+  });
+}
+
+export async function toggleOrderStatus(orderId: string, currentStatus: string) {
+  const newStatus = currentStatus === 'pending' ? 'confirmed' : 'pending';
+  await prisma.order.update({
+    where: { id: orderId },
+    data: { status: newStatus },
+  });
+  revalidatePath('/admin/orders');
 }

@@ -1,109 +1,59 @@
 // src/components/ProductGallery.tsx
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react';
 
 export default function ProductGallery({ images }: { images: string[] }) {
-    // Đảm bảo luôn có ít nhất 1 ảnh để không lỗi
-    const imageList = images && images.length > 0 ? images : ['https://via.placeholder.com/600'];
-
-    // Dùng index để dễ tính toán Next/Prev
-    const [currentIndex, setCurrentIndex] = useState(0);
-
-    // Hàm chuyển ảnh tiếp theo
-    const handleNext = useCallback(() => {
-        setCurrentIndex((prev) => (prev === imageList.length - 1 ? 0 : prev + 1));
-    }, [imageList.length]);
-
-    // Hàm lùi ảnh
-    const handlePrev = useCallback(() => {
-        setCurrentIndex((prev) => (prev === 0 ? imageList.length - 1 : prev - 1));
-    }, [imageList.length]);
-
-    // --- LẮNG NGHE BÀN PHÍM (Arrow Left/Right) ---
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'ArrowRight') handleNext();
-            if (e.key === 'ArrowLeft') handlePrev();
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [handleNext, handlePrev]);
+    const [activeImage, setActiveImage] = useState(images[0]);
+    const displayImages = images.length > 0 ? images : ['https://via.placeholder.com/500'];
 
     return (
-        <div className="space-y-4 select-none">
+        <div className="space-y-6 sticky top-32">
+            {/* ẢNH CHÍNH - HIỆU ỨNG STUDIO & FLOATING */}
+            <div className="relative aspect-square rounded-[2.5rem] border-2 border-gray-100 overflow-hidden group cursor-crosshair bg-white shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)]">
 
-            {/* 1. KHUNG ẢNH LỚN (MAIN IMAGE) */}
-            <div className="relative aspect-[4/5] w-full bg-white rounded-3xl overflow-hidden border border-gray-100 group shadow-sm">
+                {/* Nền Studio Light: Tạo điểm sáng ở giữa */}
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-gray-50 via-gray-100 to-white opacity-70"></div>
 
-                {/* Ảnh chính với hiệu ứng chuyển đổi */}
-                <AnimatePresence mode='wait'>
-                    <motion.div
-                        key={currentIndex}
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="w-full h-full flex items-center justify-center p-4" // Thêm padding để ảnh không dính sát mép
-                    >
-                        <img
-                            src={imageList[currentIndex]}
-                            alt="Product View"
-                            // QUAN TRỌNG: object-contain giúp ảnh hiển thị ĐẦY ĐỦ, không bị cắt
-                            className="w-full h-full object-contain drop-shadow-lg"
-                        />
-                    </motion.div>
+                {/* Hiệu ứng bóng dưới chân sản phẩm */}
+                <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-2/3 h-10 bg-black/20 blur-3xl rounded-[100%] transition-all duration-500 group-hover:w-1/2 group-hover:blur-2xl"></div>
+
+                <AnimatePresence mode="wait">
+                    <motion.img
+                        key={activeImage}
+                        src={activeImage}
+                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, scale: 1.05 }}
+                        transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }} // Easing mượt mà
+                        alt="Product Detail"
+                        // Thêm drop-shadow mạnh và hiệu ứng float khi hover
+                        className="w-full h-full object-contain p-10 relative z-10 drop-shadow-2xl transition-all duration-700 group-hover:scale-125 group-hover:-translate-y-4"
+                    />
                 </AnimatePresence>
 
-                {/* --- NÚT ĐIỀU HƯỚNG TRÊN ẢNH (Chỉ hiện khi có > 1 ảnh) --- */}
-                {imageList.length > 1 && (
-                    <>
-                        <button
-                            onClick={(e) => { e.stopPropagation(); handlePrev(); }}
-                            className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 p-2 rounded-full shadow-md backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110"
-                        >
-                            <ChevronLeft className="w-6 h-6" />
-                        </button>
-                        <button
-                            onClick={(e) => { e.stopPropagation(); handleNext(); }}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white text-gray-800 p-2 rounded-full shadow-md backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110"
-                        >
-                            <ChevronRight className="w-6 h-6" />
-                        </button>
-                    </>
-                )}
-
-                {/* Badge phóng to */}
-                <div className="absolute top-4 right-4 bg-gray-900/5 backdrop-blur px-3 py-1.5 rounded-full text-xs font-bold text-gray-600 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
-                    <Maximize2 className="w-3 h-3" /> Zoom
+                <div className="absolute bottom-5 right-5 bg-white/90 backdrop-blur-md px-4 py-2 rounded-full text-xs font-black text-gray-900 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 flex items-center gap-2">
+                    🔍 Phóng to
                 </div>
             </div>
 
-            {/* 2. DANH SÁCH ẢNH NHỎ (THUMBNAILS) */}
-            {imageList.length > 1 && (
-                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide px-1">
-                    {imageList.map((img, index) => (
-                        <button
-                            key={index}
-                            onClick={() => setCurrentIndex(index)}
-                            className={`relative flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all duration-300 ${
-                                currentIndex === index
-                                    ? 'border-gray-900 ring-2 ring-gray-200 scale-95 opacity-100' // Active
-                                    : 'border-transparent hover:border-gray-300 opacity-60 hover:opacity-100' // Inactive
-                            }`}
-                        >
-                            <img
-                                src={img}
-                                alt={`Thumb ${index}`}
-                                className="w-full h-full object-cover" // Thumb thì vẫn nên cover cho đẹp đội hình
-                            />
-                        </button>
-                    ))}
-                </div>
-            )}
+            {/* DANH SÁCH ẢNH NHỎ - Tinh chỉnh lại */}
+            <div className="grid grid-cols-5 gap-3">
+                {displayImages.map((img, index) => (
+                    <button
+                        key={index}
+                        onClick={() => setActiveImage(img)}
+                        className={`aspect-square rounded-2xl overflow-hidden relative transition-all duration-300 ${
+                            activeImage === img
+                                ? 'ring-2 ring-red-600 ring-offset-2 shadow-md scale-105 z-10 bg-white'
+                                : 'ring-1 ring-gray-200 bg-gray-50 hover:bg-white hover:shadow-sm opacity-70 hover:opacity-100'
+                        }`}
+                    >
+                        <img src={img} alt="" className="w-full h-full object-contain p-2 drop-shadow-md" />
+                    </button>
+                ))}
+            </div>
         </div>
     );
 }

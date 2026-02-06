@@ -2,8 +2,8 @@
 import Link from 'next/link';
 import { prisma } from '../../lib/prisma';
 import DeleteButton from './DeleteButton';
-import AdminSearch from '../../components/AdminSearch'; // <--- Import component mới
-import { Plus, Package, DollarSign, TrendingUp, LogOut } from 'lucide-react';
+import AdminSearch from '../../components/AdminSearch';
+import { Plus, Package, DollarSign, TrendingUp, LogOut, ShoppingCart } from 'lucide-react'; // Thêm ShoppingCart
 import { logout } from '../actions';
 
 // Next.js 15+: searchParams là Promise
@@ -13,23 +13,20 @@ export default async function AdminDashboard({
   searchParams: Promise<{ q?: string }>
 }) {
 
-  // 1. Lấy từ khóa tìm kiếm từ URL
   const { q } = await searchParams;
   const query = q || '';
 
-  // 2. Lọc dữ liệu trong Database
   const products = await prisma.product.findMany({
     where: {
       name: {
         contains: query,
-        mode: 'insensitive', // Tìm kiếm không phân biệt hoa thường
+        mode: 'insensitive',
       },
     },
     orderBy: { createdAt: 'desc' },
   });
 
   const totalProducts = products.length;
-  // Tính tổng giá trị (Fix lỗi Decimal nếu có)
   const totalValue = products.reduce((acc, p) => acc + Number(p.price), 0);
 
   return (
@@ -44,6 +41,14 @@ export default async function AdminDashboard({
             </div>
 
             <div className="flex flex-wrap gap-3 items-center">
+              {/* 1. NÚT QUẢN LÝ ĐƠN HÀNG (MỚI THÊM) */}
+              <Link
+                  href="/admin/orders"
+                  className="bg-white border border-gray-200 text-gray-900 px-5 py-3 rounded-xl flex items-center gap-2 font-bold hover:bg-gray-50 hover:text-blue-600 transition shadow-sm h-full"
+              >
+                <ShoppingCart className="w-5 h-5" /> Đơn hàng
+              </Link>
+
               <form action={logout}>
                 <button className="bg-white border border-gray-200 text-gray-600 px-5 py-3 rounded-xl flex items-center gap-2 font-bold hover:bg-gray-50 hover:text-red-600 transition shadow-sm h-full">
                   <LogOut className="w-5 h-5" /> <span className="hidden md:inline">Thoát</span>
@@ -61,7 +66,6 @@ export default async function AdminDashboard({
 
           {/* Thống kê nhanh */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Card 1 */}
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center gap-4">
               <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600">
                 <Package className="w-6 h-6" />
@@ -72,7 +76,6 @@ export default async function AdminDashboard({
               </div>
             </div>
 
-            {/* Card 2 */}
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center gap-4">
               <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center text-green-600">
                 <DollarSign className="w-6 h-6" />
@@ -85,7 +88,6 @@ export default async function AdminDashboard({
               </div>
             </div>
 
-            {/* Card 3 */}
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center gap-4">
               <div className="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center text-purple-600">
                 <TrendingUp className="w-6 h-6" />
@@ -103,10 +105,7 @@ export default async function AdminDashboard({
               <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2 whitespace-nowrap">
                 <Package className="w-5 h-5 text-gray-400" /> Danh sách
               </h2>
-
-              {/* --- NHÚNG THANH TÌM KIẾM Ở ĐÂY --- */}
               <AdminSearch />
-
             </div>
 
             <div className="overflow-x-auto">

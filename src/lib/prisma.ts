@@ -1,6 +1,7 @@
 // src/lib/prisma.ts
 import { PrismaClient } from '@prisma/client'
 
+// Khai báo type cho biến global để TypeScript hiểu
 const globalForPrisma = global as unknown as { prisma: PrismaClient }
 
 export const prisma =

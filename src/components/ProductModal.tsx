@@ -1,85 +1,116 @@
 // src/components/ProductModal.tsx
 'use client';
 
-import { X, ShoppingCart, Truck, ShieldCheck } from 'lucide-react';
-import ProductImageGallery from './ProductImageGallery'; // Tận dụng lại gallery ảnh xịn xò
-import { useEffect } from 'react';
+import { useCart } from '../context/CartContext';
+import { X, Minus, Plus, ShoppingCart, Star } from 'lucide-react'; // Thêm Star
+import { useState, useEffect } from 'react';
 
-// Định nghĩa kiểu dữ liệu cho sản phẩm
-type Product = {
-  id: string;
-  name: string;
-  price: number;
-  category: string;
-  description: string;
-  images: string[];
-};
+export default function ProductModal() {
+  const { viewedProduct, closeProductModal, addToCart } = useCart();
+  const [quantity, setQuantity] = useState(1);
 
-export default function ProductModal({ product, onClose }: { product: Product; onClose: () => void }) {
-  // Tắt popup khi bấm ESC
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    document.body.style.overflow = 'hidden'; // Khóa cuộn trang chính
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'auto';
-    };
-  }, [onClose]);
+    if (viewedProduct) setQuantity(1);
+  }, [viewedProduct]);
 
-  if (!product) return null;
+  if (!viewedProduct) return null;
+
+  const handleAddToCart = () => {
+    addToCart(viewedProduct, quantity);
+  };
+
+  const totalPrice = Number(viewedProduct.price) * quantity;
 
   return (
-    <div className="fixed inset-0 z-[50] flex items-center justify-center p-4">
-      {/* Nền đen mờ */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        {/* 1. BACKDROP MỜ ẢO (Blur Effect) */}
+        <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-md transition-opacity duration-300"
+            onClick={closeProductModal}
+        ></div>
 
-      {/* Hộp nội dung Popup */}
-      <div className="relative bg-white w-full max-w-4xl max-h-[90vh] rounded-3xl shadow-2xl overflow-y-auto animate-in fade-in zoom-in duration-200 flex flex-col md:flex-row">
-        
-        {/* Nút tắt */}
-        <button 
-          onClick={onClose}
-          className="absolute top-4 right-4 z-10 p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition"
-        >
-          <X className="w-6 h-6 text-gray-600" />
-        </button>
+        {/* 2. POPUP GLASSMORPHISM */}
+        <div className="bg-white/95 backdrop-blur-xl rounded-[2.5rem] w-full max-w-4xl shadow-2xl shadow-black/20 overflow-hidden relative animate-in zoom-in-95 fade-in duration-300 z-10 flex flex-col md:flex-row max-h-[90vh] ring-1 ring-white/50">
 
-        {/* Cột Trái: Ảnh */}
-        <div className="w-full md:w-1/2 p-6 bg-gray-50">
-           <ProductImageGallery images={product.images} />
-        </div>
-
-        {/* Cột Phải: Thông tin */}
-        <div className="w-full md:w-1/2 p-6 md:p-10 flex flex-col">
-          <span className="text-blue-600 font-bold text-xs uppercase tracking-wider mb-2">{product.category}</span>
-          <h2 className="text-3xl font-black text-gray-900 mb-4 leading-tight">{product.name}</h2>
-          
-          <div className="flex items-center gap-3 mb-6">
-             <span className="text-3xl font-bold text-red-600">
-               {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
-             </span>
-             <span className="bg-red-100 text-red-600 px-2 py-1 rounded text-xs font-bold">-15%</span>
-          </div>
-
-          <p className="text-gray-600 mb-6 leading-relaxed line-clamp-4 flex-grow">
-            {product.description}
-          </p>
-
-          {/* Tiện ích */}
-          <div className="grid grid-cols-2 gap-4 mb-6 text-sm text-gray-500">
-            <div className="flex items-center gap-2"><Truck className="w-4 h-4" /> Freeship</div>
-            <div className="flex items-center gap-2"><ShieldCheck className="w-4 h-4" /> Bảo hành 12T</div>
-          </div>
-
-          {/* Nút Mua */}
-          <button className="w-full bg-black text-white py-4 rounded-xl font-bold hover:bg-gray-800 transition flex items-center justify-center gap-2 shadow-lg">
-            <ShoppingCart className="w-5 h-5" /> Thêm vào giỏ hàng
+          <button
+              onClick={closeProductModal}
+              className="absolute top-5 right-5 p-2 bg-black/5 hover:bg-black/10 rounded-full transition z-20 backdrop-blur-sm"
+          >
+            <X className="w-6 h-6 text-gray-600" />
           </button>
+
+          {/* Cột Trái: Ảnh với nền Gradient nhẹ */}
+          <div className="w-full md:w-1/2 bg-gradient-to-br from-gray-50 to-gray-100/50 p-10 flex items-center justify-center relative overflow-hidden">
+            {/* Decor nền */}
+            <div className="absolute top-0 left-0 w-64 h-64 bg-red-500/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
+
+            <img
+                src={viewedProduct.images?.[0] || viewedProduct.image}
+                alt={viewedProduct.name}
+                className="w-full h-full object-contain mix-blend-multiply max-h-[350px] drop-shadow-xl transform transition-transform duration-700 hover:scale-110"
+            />
+          </div>
+
+          {/* Cột Phải: Thông tin */}
+          <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-white/60">
+            <div className="flex items-center gap-1 text-yellow-500 mb-2">
+              <Star className="w-4 h-4 fill-current" />
+              <Star className="w-4 h-4 fill-current" />
+              <Star className="w-4 h-4 fill-current" />
+              <Star className="w-4 h-4 fill-current" />
+              <Star className="w-4 h-4 fill-current" />
+              <span className="text-gray-400 text-xs font-bold ml-2">(120 đánh giá)</span>
+            </div>
+
+            <h3 className="text-2xl md:text-3xl font-black text-gray-900 mb-2 leading-tight">
+              {viewedProduct.name}
+            </h3>
+            <p className="text-sm font-medium text-gray-400 mb-8 flex items-center gap-2">
+              <span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+              Còn hàng sẵn kho
+            </p>
+
+            <div className="flex-1">
+              <p className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-widest">Chọn số lượng</p>
+
+              <div className="flex items-center gap-6 mb-8">
+                <button
+                    onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                    className="w-12 h-12 rounded-2xl border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition active:scale-95"
+                >
+                  <Minus className="w-5 h-5 text-gray-600" />
+                </button>
+
+                <span className="text-4xl font-black text-gray-900 w-16 text-center tabular-nums">{quantity}</span>
+
+                <button
+                    onClick={() => setQuantity(q => q + 1)}
+                    className="w-12 h-12 rounded-2xl bg-black text-white flex items-center justify-center hover:bg-gray-800 transition shadow-lg hover:shadow-xl hover:-translate-y-1 active:scale-95"
+                >
+                  <Plus className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Footer: Tổng tiền & Nút Mua */}
+            <div className="border-t border-gray-100 pt-6 mt-auto">
+              <div className="flex justify-between items-end mb-4">
+                <span className="text-gray-500 font-medium text-sm">Tổng thanh toán:</span>
+                <span className="text-3xl font-black text-red-600 tracking-tight">
+                   {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalPrice)}
+                 </span>
+              </div>
+
+              {/* Nút bấm có hiệu ứng Glow */}
+              <button
+                  onClick={handleAddToCart}
+                  className="w-full bg-red-600 text-white h-16 rounded-2xl font-bold text-lg hover:bg-red-700 transition flex items-center justify-center gap-3 shadow-[0_10px_30px_rgba(220,38,38,0.4)] hover:shadow-[0_15px_35px_rgba(220,38,38,0.5)] hover:-translate-y-1 transform duration-300"
+              >
+                <ShoppingCart className="w-6 h-6" /> THÊM VÀO GIỎ
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
   );
 }
