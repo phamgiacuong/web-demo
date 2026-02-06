@@ -15,6 +15,23 @@ const tabs = [
     { id: 'quanao', label: 'Thời trang', icon: Shirt },
 ];
 
+// Animation variants cho container
+const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.1 // Hiệu ứng xuất hiện lần lượt
+        }
+    }
+};
+
+// Animation variants cho từng item
+const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 50 } }
+};
+
 export default function ProductShowcase({ products }: { products: any[] }) {
     const [activeTab, setActiveTab] = useState('all');
 
@@ -61,34 +78,34 @@ export default function ProductShowcase({ products }: { products: any[] }) {
 
             {/* GRID SẢN PHẨM */}
             <motion.div
-                layout
+                variants={containerVariants}
+                initial="hidden"
+                animate="show"
+                key={activeTab} // Re-trigger animation khi đổi tab
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 gap-y-12"
             >
                 <AnimatePresence mode='popLayout'>
                     {filteredProducts.length > 0 ? (
-                        filteredProducts.map((product) => (
+                        filteredProducts.map((product, index) => (
                             <motion.div
+                                variants={itemVariants}
                                 layout
                                 key={product.id}
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.8 }}
-                                transition={{ duration: 0.3 }}
                             >
                                 <ProductCard
                                     product={{
                                         ...product,
                                         price: Number(product.price)
                                     }}
-                                    index={0}
+                                    index={index}
                                 />
                             </motion.div>
                         ))
                     ) : (
                         // TRẠNG THÁI KHÔNG CÓ SẢN PHẨM
                         <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
                             className="col-span-full text-center py-20"
                         >
                             <div className="inline-block p-6 rounded-full bg-gray-50 mb-4 animate-bounce">
@@ -100,8 +117,6 @@ export default function ProductShowcase({ products }: { products: any[] }) {
                     )}
                 </AnimatePresence>
             </motion.div>
-
-            {/* ĐÃ XÓA NÚT "XEM TẤT CẢ" Ở ĐÂY */}
         </div>
     );
 }

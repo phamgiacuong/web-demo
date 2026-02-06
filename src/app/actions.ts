@@ -52,9 +52,22 @@ export async function getProductById(id: string) {
 }
 
 export async function deleteProduct(id: string) {
-  await prisma.product.delete({ where: { id } });
-  revalidatePath('/admin');
-  revalidatePath('/');
+  try {
+    // 1. Xóa các OrderItem liên quan đến sản phẩm này trước
+    // (Lưu ý: Việc này sẽ làm mất thông tin sản phẩm trong các đơn hàng cũ)
+    await prisma.orderItem.deleteMany({
+      where: { productId: id }
+    });
+
+    // 2. Sau đó mới xóa sản phẩm
+    await prisma.product.delete({ where: { id } });
+    
+    revalidatePath('/admin');
+    revalidatePath('/');
+  } catch (error) {
+    console.error("Error deleting product:", error);
+    throw new Error("Không thể xóa sản phẩm. Có thể sản phẩm đang nằm trong một đơn hàng.");
+  }
 }
 
 // 👇 HÀM ADD: SỬA ĐỂ NHẬN CHUỖI ẢNH TỪ FRONTEND
