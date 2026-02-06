@@ -117,7 +117,8 @@ export default function AddProductPage() {
                   <p className="text-sm font-medium text-gray-700">Click để tải ảnh lên</p>
                 </div>
                 <input 
-                  type="file" 
+                  type="file"
+                  name="image"
                   multiple 
                   accept="image/*"
                   className="hidden" 

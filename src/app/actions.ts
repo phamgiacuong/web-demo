@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 
-// --- AUTH & PRODUCTS ---
+// --- AUTH (Giữ nguyên) ---
 export async function login(formData: FormData) {
   const password = formData.get('password') as string;
   if (password === '123') {
@@ -29,11 +29,17 @@ export async function logout() {
   redirect('/login');
 }
 
+// --- PRODUCTS ---
 export async function getProducts(query: string, category: string) {
   return await prisma.product.findMany({
     where: {
       AND: [
-        { name: { contains: query, mode: 'insensitive' } },
+        {
+          OR: [
+            { name: { contains: query } },
+            { description: { contains: query } }
+          ]
+        },
         category ? { category: category } : {},
       ],
     },
@@ -51,51 +57,89 @@ export async function deleteProduct(id: string) {
   revalidatePath('/');
 }
 
+// 👇 HÀM ADD: SỬA ĐỂ NHẬN CHUỖI ẢNH TỪ FRONTEND
 export async function addProduct(formData: FormData) {
   const name = formData.get('name') as string;
   const price = formData.get('price') as string;
   const description = formData.get('description') as string;
   const category = formData.get('category') as string;
-  const image = formData.get('image') as string;
+
+  // 1. Lấy chuỗi ảnh từ input hidden (name="images")
+  const imagesString = formData.get('images') as string;
+
+  // 2. Tách chuỗi thành mảng dựa trên ký tự phân cách '|||'
+  // Logic này khớp với code frontend: value={images.join('|||')}
+  let finalImages: string[] = [];
+
+  if (imagesString && imagesString.trim() !== '') {
+    finalImages = imagesString.split('|||').filter(img => img.trim() !== '');
+  }
+
+  // Nếu không có ảnh nào, dùng ảnh placeholder
+  if (finalImages.length === 0) {
+    finalImages = ['https://placehold.co/600x400?text=No+Image'];
+  }
+
+  if (!name || !price) {
+    throw new Error("Tên và giá sản phẩm là bắt buộc");
+  }
 
   await prisma.product.create({
     data: {
       name,
       price: parseFloat(price),
-      description,
-      category,
-      images: [image],
+      description: description || '',
+      category: category || 'other',
+      images: finalImages, // Lưu mảng ảnh trực tiếp
     },
   });
-  revalidatePath('/admin');
+
   revalidatePath('/');
+  revalidatePath('/admin');
   redirect('/admin');
 }
 
+// 👇 HÀM UPDATE: SỬA ĐỂ ĐỒNG BỘ VỚI FRONTEND
 export async function updateProduct(id: string, formData: FormData) {
   const name = formData.get('name') as string;
   const price = formData.get('price') as string;
   const description = formData.get('description') as string;
   const category = formData.get('category') as string;
-  const image = formData.get('image') as string;
+
+  // 1. Lấy chuỗi ảnh từ input hidden
+  // Ở trang Edit, frontend đã tự xử lý việc gộp ảnh cũ + ảnh mới vào chuỗi này rồi
+  const imagesString = formData.get('images') as string;
+
+  let finalImages: string[] = [];
+
+  if (imagesString && imagesString.trim() !== '') {
+    finalImages = imagesString.split('|||').filter(img => img.trim() !== '');
+  }
+
+  // Tạo object dữ liệu update
+  const dataToUpdate: any = {
+    name,
+    price: parseFloat(price),
+    description,
+    category,
+  };
+
+  // Chỉ cập nhật trường images nếu mảng không rỗng
+  if (finalImages.length > 0) {
+    dataToUpdate.images = finalImages;
+  }
 
   await prisma.product.update({
     where: { id },
-    data: {
-      name,
-      price: parseFloat(price),
-      description,
-      category,
-      images: [image],
-    },
+    data: dataToUpdate,
   });
+
   revalidatePath('/admin');
   revalidatePath('/');
   redirect('/admin');
 }
 
-// --- ORDER ACTIONS (MỚI) ---
-
+// --- ORDER ACTIONS (Giữ nguyên) ---
 export async function createOrder(customerName: string, cartItems: any[], total: number) {
   await prisma.order.create({
     data: {
