@@ -2,11 +2,12 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCart, Heart } from 'lucide-react';
+import { ShoppingCart, Heart, Eye } from 'lucide-react'; // Thêm Eye để xem nhanh
 import { useCart } from '../context/CartContext';
 
 export default function ProductCard({ product, index }: { product: any; index: number }) {
-  const { openProductModal } = useCart();
+  // Lấy thêm hàm addToCart từ Context
+  const { openProductModal, addToCart } = useCart();
 
   const formattedPrice = new Intl.NumberFormat('vi-VN', {
     style: 'currency',
@@ -18,50 +19,51 @@ export default function ProductCard({ product, index }: { product: any; index: n
           className="group relative rounded-[2rem] transition-all duration-500 ease-out transform hover:-translate-y-3 z-0"
           style={{ animationDelay: `${index * 50}ms` }}
       >
-        {/* --- 1. LỚP HÀO QUANG (Glow Effect) --- */}
-        {/* Lớp này nằm ẩn phía sau, khi hover sẽ hiện lên tạo hiệu ứng phát sáng màu đỏ */}
+        {/* --- LỚP HÀO QUANG --- */}
         <div className="absolute -inset-[2px] bg-gradient-to-r from-red-200 via-red-100 to-red-200 rounded-[2rem] blur-xl opacity-0 group-hover:opacity-70 transition-opacity duration-500 -z-10"></div>
 
-        {/* Card chính */}
         <div className="bg-white rounded-[2rem] border border-gray-100/80 overflow-hidden shadow-sm group-hover:shadow-[0_20px_40px_rgba(220,38,38,0.1)] transition-all relative z-10 backdrop-blur-sm">
 
-          {/* 2. ẢNH SẢN PHẨM VỚI NỀN STUDIO */}
+          {/* ẢNH SẢN PHẨM */}
           <Link href={`/product/${product.id}`} className="block relative aspect-[4/5] overflow-hidden cursor-pointer">
-            {/* Nền gradient tỏa tròn tạo chiều sâu */}
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white via-gray-50 to-gray-100 opacity-50"></div>
 
             <img
                 src={product.images?.[0] || 'https://via.placeholder.com/300'}
                 alt={product.name}
-                // Thêm drop-shadow cho chính bức ảnh để tách nền
-                className="w-full h-full object-contain p-6 transition-transform duration-700 cubic-bezier(0.4, 0, 0.2, 1) group-hover:scale-110 relative z-10 drop-shadow-xl"
+                className="w-full h-full object-contain p-6 transition-transform duration-700 group-hover:scale-110 relative z-10 drop-shadow-xl"
             />
 
-            {/* Badge HOT */}
             <div className="absolute top-4 left-4 bg-red-600/90 backdrop-blur text-white text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-sm z-20">
               Hot
             </div>
           </Link>
 
-          {/* NÚT TÁC VỤ (Giữ nguyên, chỉ tinh chỉnh shadow) */}
-          <div className="absolute inset-x-4 bottom-40 flex gap-3 translate-y-8 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 ease-out z-30">
+          {/* NÚT TÁC VỤ - ĐÃ SỬA LẠI ACTION */}
+          <div className="absolute inset-x-4 bottom-40 flex gap-2 translate-y-8 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 ease-out z-30">
+            {/* Nút Thêm nhanh: Giờ đây sẽ thêm thẳng vào giỏ */}
             <button
-                className="flex-1 bg-white/90 backdrop-blur-md text-gray-900 py-3.5 rounded-2xl font-bold text-sm shadow-[0_10px_20px_rgba(0,0,0,0.1)] hover:bg-black hover:text-white transition flex items-center justify-center gap-2 hover:scale-105 active:scale-95"
+                className="flex-[2] bg-black text-white py-3.5 rounded-2xl font-bold text-sm shadow-lg hover:bg-red-600 transition flex items-center justify-center gap-2 hover:scale-105 active:scale-95"
                 onClick={(e) => {
                   e.preventDefault();
-                  openProductModal({
-                    id: product.id,
-                    name: product.name,
-                    price: Number(product.price),
-                    images: product.images,
-                    image: product.images?.[0]
-                  });
+                  e.stopPropagation();
+                  addToCart(product); // Gọi hàm thêm vào giỏ hàng
                 }}
             >
               <ShoppingCart className="w-5 h-5" /> Thêm nhanh
             </button>
-            <button className="p-3.5 bg-white/90 backdrop-blur-md text-gray-900 rounded-2xl shadow-[0_10px_20px_rgba(0,0,0,0.1)] hover:text-red-500 transition hover:scale-105 active:scale-95">
-              <Heart className="w-5 h-5" />
+
+            {/* Nút Xem nhanh: Để mở Modal (nếu bạn vẫn muốn dùng Modal) */}
+            <button
+                className="flex-1 bg-white/90 backdrop-blur-md text-gray-900 rounded-2xl shadow-md hover:bg-gray-100 transition flex items-center justify-center"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  openProductModal(product);
+                }}
+                title="Xem nhanh"
+            >
+              <Eye className="w-5 h-5" />
             </button>
           </div>
 

@@ -60,35 +60,45 @@ export function CartProvider({ children }: { children: ReactNode }) {
     };
 
     const addItemToCartLogic = (product: any, quantity: number = 1) => {
-        // 1. Thông báo
-        const existingInCart = cart.find((item) => item.id === product.id);
+        // Chuẩn hóa dữ liệu sản phẩm trước khi đưa vào giỏ hàng
+        const productToCart: CartItem = {
+            id: product.id,
+            name: product.name,
+            price: Number(product.price),
+            // Lấy ảnh: ưu tiên trường 'image', nếu không có thì lấy ảnh đầu tiên trong mảng 'images'
+            image: product.image || (Array.isArray(product.images) ? product.images[0] : product.images) || 'https://via.placeholder.com/300',
+            quantity: quantity
+        };
+
+        const existingInCart = cart.find((item) => item.id === productToCart.id);
+
         if (existingInCart) {
-            toast.success(`Đã thêm ${quantity} sản phẩm!`);
+            toast.success(`Đã cập nhật số lượng ${productToCart.name}!`);
         } else {
-            toast.success('Đã thêm vào giỏ!');
+            toast.success(`Đã thêm ${productToCart.name} vào giỏ!`);
         }
 
-        // 2. Cập nhật State
         setCart((prev) => {
-            const existing = prev.find((item) => item.id === product.id);
+            const existing = prev.find((item) => item.id === productToCart.id);
             if (existing) {
                 return prev.map((item) =>
-                    item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item
+                    item.id === productToCart.id
+                        ? { ...item, quantity: item.quantity + quantity }
+                        : item
                 );
             }
-            return [...prev, { ...product, quantity: quantity, price: Number(product.price) }];
+            return [...prev, productToCart];
         });
     };
 
     const addToCart = (product: any, quantity: number = 1) => {
         if (!customerName) {
-            // Lưu cả sản phẩm và số lượng vào pending
             setPendingProduct({ product, quantity });
             setNameModalOpen(true);
         } else {
             addItemToCartLogic(product, quantity);
         }
-        // Sau khi thêm thì đóng popup sản phẩm (nếu đang mở)
+        // Đóng modal xem nhanh sau khi đã thêm vào giỏ
         setViewedProduct(null);
     };
 
