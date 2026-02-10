@@ -1,23 +1,38 @@
-// src/middleware.ts
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { verifySession } from './lib/auth';
 
-export function middleware(request: NextRequest) {
-  // Lấy cookie tên là 'auth'
-  const authCookie = request.cookies.get('auth')
+export async function middleware(request: NextRequest) {
+  const path = request.nextUrl.pathname;
 
-  // Nếu người dùng muốn vào trang bắt đầu bằng '/admin'
-  if (request.nextUrl.pathname.startsWith('/admin')) {
-    // Nếu không có cookie 'auth' -> ĐÁ VỀ TRANG LOGIN
-    if (!authCookie) {
-      return NextResponse.redirect(new URL('/login', request.url))
+  // 1. Định nghĩa các route được bảo vệ
+  const isAdminRoute = path.startsWith('/admin');
+  const isLoginRoute = path.startsWith('/login');
+
+  // 2. Lấy session từ cookie
+  const token = request.cookies.get('session')?.value;
+  const session = token ? await verifySession(token) : null;
+
+  // 3. Logic bảo vệ Route
+  
+  // Nếu đang vào trang Admin mà chưa đăng nhập hoặc không phải ADMIN
+  if (isAdminRoute) {
+    if (!session || session.role !== 'ADMIN') {
+      return NextResponse.redirect(new URL('/login', request.url));
     }
   }
 
-  return NextResponse.next()
+  // Nếu đã đăng nhập mà cố vào trang Login -> Chuyển hướng về Admin hoặc Home
+  if (isLoginRoute && session) {
+    if (session.role === 'ADMIN') {
+      return NextResponse.redirect(new URL('/admin', request.url));
+    }
+    return NextResponse.redirect(new URL('/', request.url));
+  }
+
+  return NextResponse.next();
 }
 
-// Cấu hình: Middleware chỉ chạy trên các đường dẫn này
 export const config = {
-  matcher: '/admin/:path*',
-}
+  matcher: ['/admin/:path*', '/login'],
+};

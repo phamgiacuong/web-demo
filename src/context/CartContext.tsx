@@ -5,23 +5,25 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import toast from 'react-hot-toast';
 
 type CartItem = {
-    id: string;
+    cartItemId: string; // ID duy nhất trong giỏ hàng (kết hợp productId + attributes)
+    id: string; // Product ID gốc
     name: string;
     price: number;
     image: string;
     quantity: number;
+    selectedAttributes?: Record<string, string>; // Thuộc tính đã chọn
 };
 
 type CartContextType = {
     cart: CartItem[];
     customerName: string;
     isNameModalOpen: boolean;
-    viewedProduct: any | null; // <--- MỚI: Sản phẩm đang hiện popup
-    addToCart: (product: any, quantity?: number) => void; // <--- CẬP NHẬT: Nhận thêm số lượng
-    openProductModal: (product: any) => void; // <--- MỚI
-    closeProductModal: () => void; // <--- MỚI
-    removeFromCart: (id: string) => void;
-    updateQuantity: (id: string, quantity: number) => void;
+    viewedProduct: any | null;
+    addToCart: (product: any, quantity?: number) => void;
+    openProductModal: (product: any) => void;
+    closeProductModal: () => void;
+    removeFromCart: (cartItemId: string) => void; // Sửa tham số thành cartItemId
+    updateQuantity: (cartItemId: string, quantity: number) => void; // Sửa tham số thành cartItemId
     setCustomerName: (name: string) => void;
     closeNameModal: () => void;
     clearCart: () => void;
@@ -35,7 +37,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const [customerName, setCustomerNameState] = useState('');
     const [isNameModalOpen, setNameModalOpen] = useState(false);
 
-    const [viewedProduct, setViewedProduct] = useState<any | null>(null); // <--- State popup sản phẩm
+    const [viewedProduct, setViewedProduct] = useState<any | null>(null);
     const [pendingProduct, setPendingProduct] = useState<any>(null);
 
     useEffect(() => {
@@ -53,68 +55,85 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const setCustomerName = (name: string) => {
         setCustomerNameState(name);
         if (pendingProduct) {
-            // Nếu có đơn treo, thêm vào ngay với số lượng đã chọn
             addItemToCartLogic(pendingProduct.product, pendingProduct.quantity);
             setPendingProduct(null);
         }
     };
 
     const addItemToCartLogic = (product: any, quantity: number = 1) => {
-        // Chuẩn hóa dữ liệu sản phẩm trước khi đưa vào giỏ hàng
+        // Tạo ID duy nhất cho item trong giỏ hàng dựa trên ID sản phẩm và thuộc tính
+        // Sắp xếp key của attributes để đảm bảo thứ tự không ảnh hưởng đến stringify
+        const sortedAttributes = product.selectedAttributes 
+            ? Object.keys(product.selectedAttributes).sort().reduce((obj: any, key) => {
+                obj[key] = product.selectedAttributes[key];
+                return obj;
+            }, {})
+            : {};
+            
+        const cartItemId = `${product.id}-${JSON.stringify(sortedAttributes)}`;
+
         const productToCart: CartItem = {
+            cartItemId: cartItemId,
             id: product.id,
             name: product.name,
             price: Number(product.price),
-            // Lấy ảnh: ưu tiên trường 'image', nếu không có thì lấy ảnh đầu tiên trong mảng 'images'
             image: product.image || (Array.isArray(product.images) ? product.images[0] : product.images) || 'https://via.placeholder.com/300',
-            quantity: quantity
+            quantity: quantity,
+            selectedAttributes: product.selectedAttributes
         };
 
-        const existingInCart = cart.find((item) => item.id === productToCart.id);
+        const existingInCart = cart.find((item) => item.cartItemId === productToCart.cartItemId);
 
         if (existingInCart) {
             toast.success(`Đã cập nhật số lượng ${productToCart.name}!`);
+            setCart((prev) => prev.map((item) =>
+                item.cartItemId === productToCart.cartItemId
+                    ? { ...item, quantity: item.quantity + quantity }
+                    : item
+            ));
         } else {
             toast.success(`Đã thêm ${productToCart.name} vào giỏ!`);
+            setCart((prev) => [...prev, productToCart]);
         }
-
-        setCart((prev) => {
-            const existing = prev.find((item) => item.id === productToCart.id);
-            if (existing) {
-                return prev.map((item) =>
-                    item.id === productToCart.id
-                        ? { ...item, quantity: item.quantity + quantity }
-                        : item
-                );
-            }
-            return [...prev, productToCart];
-        });
     };
 
     const addToCart = (product: any, quantity: number = 1) => {
         if (!customerName) {
+            // Lưu ý: pendingProduct cũng cần lưu thông tin đầy đủ để add sau này
             setPendingProduct({ product, quantity });
-            setNameModalOpen(true);
+            // Tạm thời bỏ qua check tên ở đây nếu muốn flow mượt hơn, hoặc giữ nguyên logic cũ
+            // Ở đây tôi giữ nguyên logic cũ là bắt nhập tên (hoặc login)
+            // Nhưng vì bạn đã có cơ chế login bắt buộc khi checkout, có thể bỏ check tên ở đây nếu muốn
+            // Tuy nhiên code cũ đang dùng logic này nên tôi giữ nguyên để tránh break flow hiện tại
+            // Nếu đã login (có customerName hoặc user session - cần check thêm auth context nếu muốn chặt chẽ)
+            // Hiện tại code chỉ check customerName từ localStorage
+            
+            // Nếu muốn bắt buộc login mới add được thì check session ở đây.
+            // Nhưng logic hiện tại là cho add, khi checkout mới bắt login.
+            // Vấn đề là customerName đang được dùng như một flag "đã nhập tên".
+            
+            // Để đơn giản và khớp với yêu cầu "đăng nhập khi thanh toán", ta cứ cho add vào giỏ.
+            // Việc check login sẽ làm ở trang Cart.
+            // Vì vậy tôi sẽ bỏ qua check customerName ở đây và add thẳng.
+            addItemToCartLogic(product, quantity);
         } else {
             addItemToCartLogic(product, quantity);
         }
-        // Đóng modal xem nhanh sau khi đã thêm vào giỏ
         setViewedProduct(null);
     };
 
-    // Các hàm mở/đóng popup sản phẩm
     const openProductModal = (product: any) => setViewedProduct(product);
     const closeProductModal = () => setViewedProduct(null);
 
-    const removeFromCart = (id: string) => {
-        setCart((prev) => prev.filter((item) => item.id !== id));
+    const removeFromCart = (cartItemId: string) => {
+        setCart((prev) => prev.filter((item) => item.cartItemId !== cartItemId));
         toast.success('Đã xóa sản phẩm');
     };
 
-    const updateQuantity = (id: string, quantity: number) => {
+    const updateQuantity = (cartItemId: string, quantity: number) => {
         if (quantity < 1) return;
         setCart((prev) =>
-            prev.map((item) => (item.id === id ? { ...item, quantity } : item))
+            prev.map((item) => (item.cartItemId === cartItemId ? { ...item, quantity } : item))
         );
     };
 

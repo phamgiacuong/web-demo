@@ -1,176 +1,83 @@
-// src/app/admin/page.tsx
-import Link from 'next/link';
 import { prisma } from '../../lib/prisma';
-import DeleteButton from './DeleteButton';
-import AdminSearch from '../../components/AdminSearch';
-import { Plus, Package, DollarSign, TrendingUp, LogOut, ShoppingCart } from 'lucide-react'; // Thêm ShoppingCart
-import { logout } from '../actions';
+import { Package, DollarSign, TrendingUp, Users, ShoppingCart } from 'lucide-react';
+import { formatCurrency } from '../../lib/utils';
 
-// Next.js 15+: searchParams là Promise
-export default async function AdminDashboard({
-                                               searchParams
-                                             }: {
-  searchParams: Promise<{ q?: string }>
-}) {
-
-  const { q } = await searchParams;
-  const query = q || '';
-
-  const products = await prisma.product.findMany({
-    where: {
-      name: {
-        contains: query,
-        mode: 'insensitive',
-      },
-    },
-    orderBy: { createdAt: 'desc' },
+export default async function AdminDashboard() {
+  const totalProducts = await prisma.product.count();
+  
+  // Tối ưu: Dùng aggregate để tính tổng giá trị kho trực tiếp từ DB
+  const aggregations = await prisma.product.aggregate({
+    _sum: { price: true },
   });
+  const totalValue = Number(aggregations._sum.price) || 0;
 
-  const totalProducts = products.length;
-  const totalValue = products.reduce((acc, p) => acc + Number(p.price), 0);
+  const totalOrders = await prisma.order.count();
+  const totalUsers = await prisma.user.count();
 
   return (
-      <div className="min-h-screen bg-gray-50 p-8 pt-32">
-        <div className="max-w-7xl mx-auto space-y-8">
+    <div className="p-8 pt-10">
+      <div className="max-w-7xl mx-auto space-y-8">
 
-          {/* Header Dashboard */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-black text-gray-900 tracking-tight">Tổng quan</h1>
+            <p className="text-gray-500 mt-1">Chào mừng trở lại, Admin!</p>
+          </div>
+        </div>
+
+        {/* Thống kê nhanh */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center gap-4">
+            <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600">
+              <Package className="w-6 h-6" />
+            </div>
             <div>
-              <h1 className="text-3xl font-black text-gray-900 tracking-tight">Dashboard</h1>
-              <p className="text-gray-500 mt-1">Hệ thống quản trị sản phẩm.</p>
-            </div>
-
-            <div className="flex flex-wrap gap-3 items-center">
-              {/* 1. NÚT QUẢN LÝ ĐƠN HÀNG (MỚI THÊM) */}
-              <Link
-                  href="/admin/orders"
-                  className="bg-white border border-gray-200 text-gray-900 px-5 py-3 rounded-xl flex items-center gap-2 font-bold hover:bg-gray-50 hover:text-blue-600 transition shadow-sm h-full"
-              >
-                <ShoppingCart className="w-5 h-5" /> Đơn hàng
-              </Link>
-
-              <form action={logout}>
-                <button className="bg-white border border-gray-200 text-gray-600 px-5 py-3 rounded-xl flex items-center gap-2 font-bold hover:bg-gray-50 hover:text-red-600 transition shadow-sm h-full">
-                  <LogOut className="w-5 h-5" /> <span className="hidden md:inline">Thoát</span>
-                </button>
-              </form>
-
-              <Link
-                  href="/admin/add"
-                  className="bg-gray-900 text-white px-6 py-3 rounded-xl flex items-center gap-2 font-bold hover:bg-red-600 transition shadow-lg hover:shadow-xl hover:-translate-y-1"
-              >
-                <Plus className="w-5 h-5" /> Thêm mới
-              </Link>
+              <p className="text-sm text-gray-500 font-medium">Sản phẩm</p>
+              <p className="text-2xl font-black text-gray-900">{totalProducts}</p>
             </div>
           </div>
 
-          {/* Thống kê nhanh */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600">
-                <Package className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 font-medium">Kết quả tìm thấy</p>
-                <p className="text-2xl font-black text-gray-900">{totalProducts}</p>
-              </div>
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center gap-4">
+            <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center text-green-600">
+              <DollarSign className="w-6 h-6" />
             </div>
-
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center gap-4">
-              <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center text-green-600">
-                <DollarSign className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 font-medium">Tổng giá trị</p>
-                <p className="text-2xl font-black text-gray-900">
-                  {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(totalValue)}
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center gap-4">
-              <div className="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center text-purple-600">
-                <TrendingUp className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 font-medium">Trạng thái</p>
-                <p className="text-2xl font-black text-gray-900">Hoạt động</p>
-              </div>
+            <div>
+              <p className="text-sm text-gray-500 font-medium">Giá trị kho</p>
+              <p className="text-2xl font-black text-gray-900">
+                {formatCurrency(totalValue)}
+              </p>
             </div>
           </div>
 
-          {/* Bảng danh sách sản phẩm */}
-          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
-              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2 whitespace-nowrap">
-                <Package className="w-5 h-5 text-gray-400" /> Danh sách
-              </h2>
-              <AdminSearch />
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center gap-4">
+            <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600">
+              <ShoppingCart className="w-6 h-6" />
             </div>
+            <div>
+              <p className="text-sm text-gray-500 font-medium">Đơn hàng</p>
+              <p className="text-2xl font-black text-gray-900">{totalOrders}</p>
+            </div>
+          </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead className="bg-gray-50/50 text-xs uppercase text-gray-500 font-bold tracking-wider">
-                <tr>
-                  <th className="p-6">Sản phẩm</th>
-                  <th className="p-6 text-right">Giá bán</th>
-                  <th className="p-6 text-center">Danh mục</th>
-                  <th className="p-6">Trạng thái</th>
-                  <th className="p-6 text-right">Tác vụ</th>
-                </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                {products.length > 0 ? (
-                    products.map((product) => (
-                        <tr key={product.id} className="hover:bg-gray-50/50 transition group">
-                          <td className="p-6">
-                            <div className="flex items-center gap-4">
-                              <img
-                                  src={product.images[0] || 'https://via.placeholder.com/100'}
-                                  alt=""
-                                  className="w-16 h-16 rounded-xl object-cover border border-gray-100 shadow-sm group-hover:scale-105 transition"
-                              />
-                              <div>
-                                <p className="font-bold text-gray-900">{product.name}</p>
-                                <p className="text-xs text-gray-400 mt-0.5">ID: {product.id.substring(0, 8)}...</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="p-6 text-right font-bold text-gray-900">
-                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(product.price))}
-                          </td>
-                          <td className="p-6 text-center">
-                        <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-600 capitalize border border-blue-100">
-                          {product.category}
-                        </span>
-                          </td>
-                          <td className="p-6">
-                        <span className="flex items-center gap-2 text-sm font-medium text-green-600">
-                          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> Sẵn hàng
-                        </span>
-                          </td>
-                          <td className="p-6 text-right">
-                            <div className="flex justify-end gap-2">
-                              <Link href={`/admin/edit/${product.id}`} className="p-2 border border-gray-200 rounded-lg hover:bg-gray-900 hover:text-white transition" title="Sửa">
-                                ✏️
-                              </Link>
-                              <DeleteButton id={product.id} />
-                            </div>
-                          </td>
-                        </tr>
-                    ))
-                ) : (
-                    <tr>
-                      <td colSpan={5} className="text-center py-12 text-gray-400">
-                        {query ? `Không tìm thấy sản phẩm nào tên "${query}"` : 'Kho hàng đang trống.'}
-                      </td>
-                    </tr>
-                )}
-                </tbody>
-              </table>
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex items-center gap-4">
+            <div className="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center text-purple-600">
+              <Users className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 font-medium">Người dùng</p>
+              <p className="text-2xl font-black text-gray-900">{totalUsers}</p>
             </div>
           </div>
         </div>
+
+        {/* Có thể thêm biểu đồ hoặc danh sách đơn hàng mới nhất ở đây */}
+        <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 text-center py-20">
+          <TrendingUp className="w-16 h-16 text-gray-200 mx-auto mb-4" />
+          <h3 className="text-xl font-bold text-gray-900">Biểu đồ doanh thu</h3>
+          <p className="text-gray-500">Tính năng đang được phát triển...</p>
+        </div>
+
       </div>
-  )
+    </div>
+  );
 }

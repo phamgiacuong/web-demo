@@ -1,5 +1,5 @@
 // src/app/page.tsx
-import { getProducts } from './actions';
+import { getProducts } from './actions/product'; // Đã sửa import từ actions cũ sang actions/product
 import Hero from '../components/Hero';
 import ScrollToTop from '../components/ScrollToTop';
 import ProductShowcase from '../components/ProductShowcase';
@@ -14,7 +14,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
     // 2. 👇 QUAN TRỌNG: Ép kiểu Decimal sang Number để Client Component dùng được
     const products = rawProducts.map((product) => ({
         ...product,
-        price: Number(product.price)
+        price: Number(product.price),
+        originPrice: product.originPrice ? Number(product.originPrice) : null // Ép kiểu originPrice
     }));
 
     return (

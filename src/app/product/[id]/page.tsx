@@ -1,11 +1,11 @@
 // src/app/product/[id]/page.tsx
-import { getProductById } from '../../actions';
+import { getProductById } from '../../actions/product'; // Cập nhật import
 import { notFound } from 'next/navigation';
 import FadeIn from '../../../components/FadeIn';
 import ProductGallery from '../../../components/ProductGallery';
 import Breadcrumbs from '../../../components/Breadcrumbs';
-import AddToCartSection from '../../../components/AddToCartSection'; // <--- IMPORT MỚI
-import { Truck, ShieldCheck } from 'lucide-react'; // Bỏ ShoppingCart vì đã chuyển sang component con
+import AddToCartSection from '../../../components/AddToCartSection';
+import { Truck, ShieldCheck } from 'lucide-react';
 
 export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -67,11 +67,11 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                 </div>
               </div>
 
-              {/* 👇 THAY THẾ NÚT CŨ BẰNG COMPONENT MỚI */}
               <AddToCartSection
                   product={{
                     ...product,
-                    price: Number(product.price) // <--- Ép kiểu Decimal sang Number ở đây
+                    price: Number(product.price),
+                    originPrice: product.originPrice ? Number(product.originPrice) : null
                   }}
               />
 

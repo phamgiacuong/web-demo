@@ -2,17 +2,12 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCart, Heart, Eye } from 'lucide-react'; // Thêm Eye để xem nhanh
+import { ShoppingCart, Eye } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { formatCurrency } from '../lib/utils';
 
 export default function ProductCard({ product, index }: { product: any; index: number }) {
-  // Lấy thêm hàm addToCart từ Context
-  const { openProductModal, addToCart } = useCart();
-
-  const formattedPrice = new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND'
-  }).format(Number(product.price));
+  const { openProductModal } = useCart();
 
   return (
       <div
@@ -39,21 +34,21 @@ export default function ProductCard({ product, index }: { product: any; index: n
             </div>
           </Link>
 
-          {/* NÚT TÁC VỤ - ĐÃ SỬA LẠI ACTION */}
+          {/* NÚT TÁC VỤ */}
           <div className="absolute inset-x-4 bottom-40 flex gap-2 translate-y-8 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 ease-out z-30">
-            {/* Nút Thêm nhanh: Giờ đây sẽ thêm thẳng vào giỏ */}
+            {/* Nút Thêm nhanh: Mở Popup chọn thuộc tính */}
             <button
                 className="flex-[2] bg-black text-white py-3.5 rounded-2xl font-bold text-sm shadow-lg hover:bg-red-600 transition flex items-center justify-center gap-2 hover:scale-105 active:scale-95"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  addToCart(product); // Gọi hàm thêm vào giỏ hàng
+                  openProductModal(product);
                 }}
             >
               <ShoppingCart className="w-5 h-5" /> Thêm nhanh
             </button>
 
-            {/* Nút Xem nhanh: Để mở Modal (nếu bạn vẫn muốn dùng Modal) */}
+            {/* Nút Xem nhanh: Cũng mở Popup */}
             <button
                 className="flex-1 bg-white/90 backdrop-blur-md text-gray-900 rounded-2xl shadow-md hover:bg-gray-100 transition flex items-center justify-center"
                 onClick={(e) => {
@@ -80,7 +75,7 @@ export default function ProductCard({ product, index }: { product: any; index: n
             </Link>
 
             <div className="flex items-center justify-between mt-auto pt-2 border-t border-dashed border-gray-100">
-              <span className="text-2xl font-black text-gray-900 tracking-tight">{formattedPrice}</span>
+              <span className="text-2xl font-black text-gray-900 tracking-tight">{formatCurrency(product.price)}</span>
               <div className="flex items-center gap-1 text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span> Sẵn hàng
               </div>

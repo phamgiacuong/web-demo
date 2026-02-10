@@ -8,33 +8,54 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id          String   @id @default(cuid())
+  username    String   @unique // Tên đăng nhập (duy nhất)
+  email       String?  @unique // Email (có thể null nếu dùng SĐT)
+  contactInfo String?  // Email hoặc Số điện thoại dùng để liên lạc
+  password    String
+  name        String?
+  role        Role     @default(USER)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 model Product {
   id          String   @id @default(cuid())
   name        String
   description String
   price       Decimal
+  originPrice Decimal?
   category    String
-  images      String[] // Mảng chứa các đường dẫn ảnh
+  images      String[]
+  attributes  Json?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  orderItems  OrderItem[]
+  // Bỏ relation: orderItems OrderItem[]
 }
 
 model Order {
   id           String      @id @default(cuid())
-  customerName String      // Tên khách hàng
-  status       String      @default("pending") // pending (chờ), confirmed (đã xong)
-  total        Decimal     // Tổng tiền
-  items        OrderItem[]
+  customerName String
+  status       String      @default("pending")
+  total        Decimal
   createdAt    DateTime    @default(now())
+  // Bỏ relation: items OrderItem[]
 }
 
 model OrderItem {
-  id        String  @id @default(cuid())
-  orderId   String
-  order     Order   @relation(fields: [orderId], references: [id])
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
-  quantity  Int
-  price     Decimal // Giá tại thời điểm mua
+  id                 String  @id @default(cuid())
+  orderId            String
+  productId          String
+  quantity           Int
+  price              Decimal
+  selectedAttributes Json?
+
+  @@index([orderId])
+  @@index([productId])
 }

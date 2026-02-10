@@ -6,7 +6,7 @@ import Footer from '../components/Footer';
 import { CartProvider } from '../context/CartContext';
 import { Toaster } from 'react-hot-toast';
 import NameModal from '../components/NameModal';
-// ❌ XÓA DÒNG NÀY: import ProductModal from '../components/ProductModal';
+import QuickViewModal from '../components/QuickViewModal';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -31,10 +31,8 @@ export default function RootLayout({
             {children}
 
             {/* Các Popup toàn cục */}
-            <NameModal /> {/* Popup hỏi tên thì giữ lại */}
-
-            {/* 👇 XÓA DÒNG DƯỚI ĐÂY ĐI VÌ NÓ GÂY LỖI */}
-            {/* <ProductModal /> */}
+            <NameModal />
+            <QuickViewModal />
 
             <Footer />
         </CartProvider>

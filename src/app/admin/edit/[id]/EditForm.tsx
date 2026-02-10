@@ -4,7 +4,7 @@
 import { updateProduct } from '../../../actions';
 import { useState, useRef } from 'react';
 import { Upload, X } from 'lucide-react';
-import Link from 'next/link'; // <--- Quan trọng: Import Link
+import Link from 'next/link';
 
 export default function EditForm({ product }: { product: any }) {
   const [images, setImages] = useState<string[]>(product.images || []);
@@ -72,7 +72,17 @@ export default function EditForm({ product }: { product: any }) {
           {images.map((img, idx) => (
              <div key={idx} className="relative aspect-square border rounded overflow-hidden group">
                <img src={img} className="w-full h-full object-cover" />
-               <button type="button" onClick={() => setImages(images.filter((_, i) => i !== idx))} className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100">
+               {/* Đã sửa: Nút xóa luôn hiện để dễ bấm trên mobile */}
+               <button 
+                 type="button" 
+                 onClick={(e) => {
+                   e.stopPropagation(); // Ngăn chặn sự kiện click lan truyền
+                   e.preventDefault(); // Ngăn chặn hành vi mặc định
+                   setImages(images.filter((_, i) => i !== idx));
+                 }} 
+                 className="absolute top-1 right-1 bg-red-500 text-white p-1.5 rounded-full shadow-md hover:bg-red-600 transition-all z-20 cursor-pointer"
+                 title="Xóa ảnh"
+               >
                  <X className="w-3 h-3" />
                </button>
              </div>

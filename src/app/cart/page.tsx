@@ -2,12 +2,13 @@
 'use client';
 
 import { useCart } from '../../context/CartContext';
-import { Trash2, Plus, Minus, ArrowRight, ShoppingBag } from 'lucide-react'; // Thêm icon ShoppingBag
+import { Trash2, Plus, Minus, ArrowRight, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
-import { createOrder } from '../actions';
+import { createOrder } from '../actions/order'; // Import từ actions/order
+import { checkAuth } from '../actions/auth'; // Import checkAuth
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
-import confetti from 'canvas-confetti'; // <--- IMPORT MỚI
+import confetti from 'canvas-confetti';
 
 export default function CartPage() {
   const { cart, removeFromCart, updateQuantity, totalAmount, customerName, clearCart } = useCart();
@@ -16,7 +17,15 @@ export default function CartPage() {
   const handleCheckout = async () => {
     if (cart.length === 0) return;
 
-    // 1. HIỆU ỨNG PHÁO HOA
+    // 1. Kiểm tra đăng nhập
+    const session = await checkAuth();
+    if (!session) {
+      toast('Vui lòng đăng nhập để thanh toán', { icon: '🔒' });
+      router.push('/login?callbackUrl=/cart');
+      return;
+    }
+
+    // 2. HIỆU ỨNG PHÁO HOA
     const duration = 3 * 1000;
     const animationEnd = Date.now() + duration;
     const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
@@ -46,7 +55,6 @@ export default function CartPage() {
     }
   };
 
-  // ... (Phần render bên dưới giữ nguyên, hoặc bạn có thể copy lại nếu cần update giao diện)
   if (cart.length === 0) {
     return (
         <div className="min-h-screen pt-32 pb-20 flex flex-col items-center justify-center bg-gray-50">
@@ -62,7 +70,6 @@ export default function CartPage() {
     );
   }
 
-  // ... (Return chính giữ nguyên logic cũ)
   return (
       <div className="min-h-screen bg-gray-50 pt-32 pb-20">
         <div className="container mx-auto px-6">
@@ -72,7 +79,7 @@ export default function CartPage() {
             {/* DANH SÁCH SẢN PHẨM */}
             <div className="flex-1 bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
               {cart.map((item) => (
-                  <div key={item.id} className="flex items-center gap-4 py-6 border-b border-gray-100 last:border-0 group">
+                  <div key={item.cartItemId} className="flex items-center gap-4 py-6 border-b border-gray-100 last:border-0 group">
                     {/* Container ảnh với hiệu ứng nổi nhẹ */}
                     <div className="relative overflow-hidden rounded-2xl border-2 border-white bg-gray-50 shadow-[0_8px_16px_-4px_rgba(0,0,0,0.1)] group-hover:shadow-[0_12px_24px_-6px_rgba(220,38,38,0.15)] transition-all duration-300">
                       {/* Nền gradient nhẹ bên trong */}
@@ -90,15 +97,25 @@ export default function CartPage() {
                       <p className="text-red-600 font-bold mt-1">
                         {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price)}
                       </p>
+                      {/* Hiển thị thuộc tính đã chọn */}
+                      {item.selectedAttributes && Object.keys(item.selectedAttributes).length > 0 && (
+                        <div className="mt-2 text-sm text-gray-500">
+                          {Object.entries(item.selectedAttributes).map(([key, value]) => (
+                            <span key={key} className="mr-3 bg-gray-100 px-2 py-1 rounded-md">
+                              {key}: <span className="font-medium text-gray-700">{String(value)}</span>
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-1 border border-gray-100">
-                      <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="p-2 hover:bg-white rounded-lg transition shadow-sm"><Minus className="w-4 h-4" /></button>
+                      <button onClick={() => updateQuantity(item.cartItemId, item.quantity - 1)} className="p-2 hover:bg-white rounded-lg transition shadow-sm"><Minus className="w-4 h-4" /></button>
                       <span className="font-bold w-8 text-center">{item.quantity}</span>
-                      <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="p-2 hover:bg-white rounded-lg transition shadow-sm"><Plus className="w-4 h-4" /></button>
+                      <button onClick={() => updateQuantity(item.cartItemId, item.quantity + 1)} className="p-2 hover:bg-white rounded-lg transition shadow-sm"><Plus className="w-4 h-4" /></button>
                     </div>
 
-                    <button onClick={() => removeFromCart(item.id)} className="p-3 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition">
+                    <button onClick={() => removeFromCart(item.cartItemId)} className="p-3 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition">
                       <Trash2 className="w-5 h-5" />
                     </button>
                   </div>

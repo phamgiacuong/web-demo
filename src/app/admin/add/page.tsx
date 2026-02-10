@@ -1,14 +1,22 @@
 // src/app/admin/add/page.tsx
 'use client'; 
 
-import { addProduct } from '../../actions'; 
+import { addProduct } from '../../actions/product'; // Import từ file mới
 import { useState, useRef } from 'react';
-import { Upload, X, DollarSign, Tag, FileText, Package } from 'lucide-react'; 
-import Link from 'next/link'; // <--- Quan trọng: Import Link để điều hướng
+import { Upload, X, DollarSign, Tag, FileText, Package, TrendingUp, Plus, Trash2, Layers } from 'lucide-react'; 
+import Link from 'next/link';
+
+type Attribute = {
+  name: string;
+  value: string;
+};
+
+const ATTRIBUTE_NAMES = ['Màu sắc', 'Size', 'Vị', 'Chất liệu', 'Khối lượng', 'Dung tích'];
 
 export default function AddProductPage() {
   const [images, setImages] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [attributes, setAttributes] = useState<Attribute[]>([]); // State lưu thuộc tính
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -43,6 +51,21 @@ export default function AddProductPage() {
     setImages(images.filter((_, i) => i !== index));
   };
 
+  // --- LOGIC THUỘC TÍNH ---
+  const addAttribute = () => {
+    setAttributes([...attributes, { name: 'Màu sắc', value: '' }]);
+  };
+
+  const removeAttribute = (index: number) => {
+    setAttributes(attributes.filter((_, i) => i !== index));
+  };
+
+  const updateAttribute = (index: number, field: keyof Attribute, newValue: string) => {
+    const newAttributes = [...attributes];
+    newAttributes[index][field] = newValue;
+    setAttributes(newAttributes);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
@@ -54,6 +77,7 @@ export default function AddProductPage() {
         <div className="bg-white py-8 px-10 shadow-xl rounded-2xl border border-gray-100">
           <form action={addProduct} className="space-y-8">
             
+            {/* Tên & Danh mục */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="flex items-center text-sm font-semibold text-gray-700 mb-2">
@@ -83,24 +107,102 @@ export default function AddProductPage() {
               </div>
             </div>
 
-            <div>
-              <label className="flex items-center text-sm font-semibold text-gray-700 mb-2">
-                <DollarSign className="w-4 h-4 mr-2" /> Giá bán (VNĐ)
-              </label>
-              <div className="relative">
-                <input 
-                  name="price" 
-                  type="number" 
-                  required 
-                  min="0"
-                  step="1000"
-                  placeholder="0" 
-                  className="w-full border border-gray-300 rounded-lg pl-4 pr-12 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition font-mono font-medium"
-                />
-                <span className="absolute right-4 top-3 text-gray-500 font-bold">₫</span>
+            {/* Giá cả */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="flex items-center text-sm font-semibold text-gray-700 mb-2">
+                  <TrendingUp className="w-4 h-4 mr-2" /> Giá gốc (VNĐ)
+                </label>
+                <div className="relative">
+                  <input 
+                    name="originPrice" 
+                    type="number" 
+                    min="0"
+                    step="1000"
+                    placeholder="Giá nhập vào..." 
+                    className="w-full border border-gray-300 rounded-lg pl-4 pr-12 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition font-mono font-medium bg-gray-50"
+                  />
+                  <span className="absolute right-4 top-3 text-gray-500 font-bold">₫</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1 ml-1">* Chỉ hiển thị với Admin</p>
+              </div>
+
+              <div>
+                <label className="flex items-center text-sm font-semibold text-gray-700 mb-2">
+                  <DollarSign className="w-4 h-4 mr-2" /> Giá bán (VNĐ)
+                </label>
+                <div className="relative">
+                  <input 
+                    name="price" 
+                    type="number" 
+                    required 
+                    min="0"
+                    step="1000"
+                    placeholder="Giá bán ra..." 
+                    className="w-full border border-gray-300 rounded-lg pl-4 pr-12 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition font-mono font-medium"
+                  />
+                  <span className="absolute right-4 top-3 text-gray-500 font-bold">₫</span>
+                </div>
               </div>
             </div>
 
+            {/* --- PHẦN THUỘC TÍNH SẢN PHẨM (MỚI) --- */}
+            <div className="bg-gray-50 p-6 rounded-xl border border-gray-200">
+              <div className="flex justify-between items-center mb-4">
+                <label className="flex items-center text-sm font-bold text-gray-800">
+                  <Layers className="w-4 h-4 mr-2" /> Thuộc tính sản phẩm
+                </label>
+                <button 
+                  type="button" 
+                  onClick={addAttribute}
+                  className="text-xs flex items-center gap-1 bg-white border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition font-semibold"
+                >
+                  <Plus className="w-3 h-3" /> Thêm thuộc tính
+                </button>
+              </div>
+
+              {attributes.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-4 italic">Chưa có thuộc tính nào (Màu sắc, Size...).</p>
+              ) : (
+                <div className="space-y-3">
+                  {attributes.map((attr, index) => (
+                    <div key={index} className="flex gap-3 items-start animate-in fade-in slide-in-from-top-2">
+                      <div className="w-1/3">
+                        <select 
+                          value={attr.name}
+                          onChange={(e) => updateAttribute(index, 'name', e.target.value)}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        >
+                          {ATTRIBUTE_NAMES.map(name => (
+                            <option key={name} value={name}>{name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex-1">
+                        <input 
+                          type="text" 
+                          value={attr.value}
+                          onChange={(e) => updateAttribute(index, 'value', e.target.value)}
+                          placeholder="Nhập giá trị (VD: Đỏ, Xanh hoặc S, M, L)"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        />
+                      </div>
+                      <button 
+                        type="button"
+                        onClick={() => removeAttribute(index)}
+                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {/* Input hidden để gửi dữ liệu attributes lên server */}
+              <input type="hidden" name="attributes" value={JSON.stringify(attributes)} />
+            </div>
+
+            {/* Hình ảnh */}
             <div>
               <label className="flex items-center text-sm font-semibold text-gray-700 mb-2">
                 <Upload className="w-4 h-4 mr-2" /> Hình ảnh sản phẩm
@@ -136,8 +238,13 @@ export default function AddProductPage() {
                       <img src={img} alt="Preview" className="w-full h-full object-cover" />
                       <button 
                         type="button"
-                        onClick={() => removeImage(index)}
-                        className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition shadow-md"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          removeImage(index);
+                        }}
+                        className="absolute top-1 right-1 bg-red-500 text-white p-1.5 rounded-full shadow-md hover:bg-red-600 transition-all z-20 cursor-pointer"
+                        title="Xóa ảnh"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -147,6 +254,7 @@ export default function AddProductPage() {
               )}
             </div>
 
+            {/* Mô tả */}
             <div>
               <label className="flex items-center text-sm font-semibold text-gray-700 mb-2">
                 <FileText className="w-4 h-4 mr-2" /> Mô tả chi tiết
